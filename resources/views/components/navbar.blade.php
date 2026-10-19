@@ -7,7 +7,7 @@
                 <span class="brand-name">Kupkop</span>
             </a>
             <span class="brand-divider">|</span>
-            <span class="brand-subtext">Brgy. San Antonio Pet Adoption</span>
+            <span class="brand-subtext">Brgy. 176-F Pet Adoption</span>
         </div>
 
         {{-- Nav Links --}}

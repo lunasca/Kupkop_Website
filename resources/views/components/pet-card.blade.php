@@ -1,23 +1,16 @@
 @props([
-    'name',
-    'species' => 'Dog',
-    'breed',
-    'age',
-    'gender',
-    'description',
-    'status' => 'Available',
-    'image' => null,
+    'pet',
 ])
 
 @php
-    $isAvailable = strtolower($status) === 'available';
-    $isCat = strtolower($species) === 'cat';
+    $isAvailable = strtolower($pet['status'] ?? 'available') === 'available';
+    $isCat = strtolower($pet['species'] ?? 'dog') === 'cat';
 @endphp
 
-<div class="pet-card">
+<div class="pet-card" id="pet-card-{{ $pet['id'] }}">
     <div class="pet-image-container">
-        @if($image)
-            <img src="{{ $image }}" alt="{{ $name }}" class="pet-image" loading="lazy">
+        @if(!empty($pet['image']))
+            <img src="{{ $pet['image'] }}" alt="{{ $pet['name'] }}" class="pet-image" loading="lazy">
         @else
             <div class="pet-image-placeholder">
                 <span>{{ $isCat ? '🐱' : '🐶' }}</span>
@@ -26,30 +19,36 @@
 
         {{-- Status badge overlaid on top right --}}
         <span class="pet-status-badge {{ $isAvailable ? 'badge-available' : 'badge-pending' }}">
-            {{ $status }}
+            {{ $pet['status'] }}
         </span>
     </div>
 
     <div class="pet-card-body">
         <div class="pet-header">
-            <h3 class="pet-name">{{ $name }}</h3>
-            <span class="pet-type-pill" title="{{ $species }}">
+            <h3 class="pet-name">{{ $pet['name'] }}</h3>
+            <span class="pet-type-pill" title="{{ $pet['species'] }}">
                 {{ $isCat ? '🐱 Cat' : '🐶 Dog' }}
             </span>
         </div>
 
         <p class="pet-details">
-            {{ $breed }} • {{ $age }} • {{ $gender }}
+            {{ $pet['breed'] }} • {{ $pet['age'] }} • {{ $pet['gender'] }}
         </p>
 
         <p class="pet-description">
-            {{ $description }}
+            {{ $pet['description'] }}
         </p>
 
         <div class="pet-card-footer">
-            <a href="{{ route('home') }}#pet-{{ Str::slug($name) }}" class="btn-pet-details">
+            <button 
+                type="button" 
+                class="btn-pet-details"
+                onclick="openPetModal({{ $pet['id'] }})"
+                aria-haspopup="dialog"
+                aria-controls="pet-details-modal"
+            >
                 View Details
-            </a>
+            </button>
         </div>
     </div>
 </div>
