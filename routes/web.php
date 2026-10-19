@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use Illuminate\Support\Facades\Route;
 
@@ -16,16 +18,24 @@ use Illuminate\Support\Facades\Route;
 // --- Public Routes ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Future public feature routes:
-// Route::resource('animals', AnimalController::class)->only(['index', 'show']);
-// Route::resource('adoption-requests', AdoptionRequestController::class)->only(['create', 'store']);
+
+// --- Authentication Routes (Guest Only) ---
+Route::middleware('guest')->group(function () {
+    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
+    Route::post('/register', [RegisterController::class, 'register']);
+
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login']);
+});
+
+// Logout Route (Authenticated Only)
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
 
-// --- Admin Routes ---
+// --- Admin Routes (Authenticated + Admin Only) ---
 Route::prefix('admin')
     ->name('admin.')
     ->group(function () {
-        // Dashboard
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
         // Future admin management routes:
