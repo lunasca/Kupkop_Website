@@ -20,6 +20,7 @@
                     id="email"
                     type="email"
                     name="email"
+                    autocomplete="username"
                     value="{{ old('email') }}"
                     required
                     autofocus
@@ -38,6 +39,7 @@
                     id="password"
                     type="password"
                     name="password"
+                    autocomplete="current-password"
                     required
                     placeholder="Enter your password"
                     class="form-control @error('password') is-invalid @enderror"

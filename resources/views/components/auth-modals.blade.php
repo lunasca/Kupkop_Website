@@ -48,6 +48,7 @@
                             id="modal_login_email"
                             type="email"
                             name="email"
+                            autocomplete="username"
                             value="{{ old('email') }}"
                             required
                             placeholder="you@example.com"
@@ -65,6 +66,7 @@
                             id="modal_login_password"
                             type="password"
                             name="password"
+                            autocomplete="current-password"
                             required
                             placeholder="Enter your password"
                             class="form-control @error('password') is-invalid @enderror"
