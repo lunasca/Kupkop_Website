@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -12,10 +13,22 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-// Home Route
+// --- Public Routes ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Future feature resource routes will be added here cleanly:
-// Route::resource('animals', AnimalController::class);
-// Route::resource('adoption-requests', AdoptionRequestController::class)->only(['store', 'update']);
-// Route::resource('messages', MessageController::class);
+// Future public feature routes:
+// Route::resource('animals', AnimalController::class)->only(['index', 'show']);
+// Route::resource('adoption-requests', AdoptionRequestController::class)->only(['create', 'store']);
+
+
+// --- Admin Routes ---
+Route::prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        // Dashboard
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        // Future admin management routes:
+        // Route::resource('animals', AdminAnimalController::class);
+        // Route::resource('adoption-requests', AdminAdoptionRequestController::class);
+    });
