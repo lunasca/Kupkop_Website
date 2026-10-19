@@ -45,6 +45,9 @@
         </div>
     </footer>
 
+    {{-- Global Authentication Modals (Login & Register) for guests --}}
+    <x-auth-modals />
+
     <!-- Base Script -->
     <script src="{{ asset('js/app.js') }}"></script>
     @stack('scripts')

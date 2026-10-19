@@ -1955,3 +1955,86 @@ body.modal-open {
         text-align: center;
     }
 }
+
+/* ==========================================================================
+   Authentication Modals (Login & Register Popups)
+   ========================================================================== */
+
+.auth-modal-backdrop {
+    z-index: 1050;
+}
+
+.auth-modal-dialog {
+    max-width: 480px;
+    padding: 0;
+    overflow: hidden;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.auth-card-modal {
+    background: #FFFFFF;
+    border-radius: 1rem;
+    padding: 2.25rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    border: 1px solid var(--border-color);
+    position: relative;
+}
+
+.auth-modal-badge {
+    display: inline-block;
+    background-color: #FFF9D0;
+    color: var(--brand-dark-brown);
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    margin-bottom: 0.5rem;
+}
+
+.demo-account-hint {
+    background-color: #F8FAFC;
+    border: 1px dashed #CBD5E1;
+    border-radius: 0.5rem;
+    padding: 0.65rem 0.85rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.demo-hint-title {
+    font-weight: 700;
+    color: var(--brand-dark-brown);
+    margin-bottom: 0.2rem;
+}
+
+.demo-account-hint code {
+    background: #E2E8F0;
+    padding: 0.1rem 0.3rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    color: #1E293B;
+}
+
+.btn-submit-auth {
+    background-color: var(--brand-dark-brown);
+    color: #FFFFFF;
+    border: none;
+    font-weight: 700;
+    font-size: 1rem;
+    font-family: inherit;
+    padding: 0.8rem 1rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.15s ease;
+    box-shadow: 0 2px 4px rgba(74, 46, 43, 0.2);
+    margin-top: 0.5rem;
+}
+
+.btn-submit-auth:hover {
+    background-color: var(--brand-dark-brown-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(74, 46, 43, 0.25);
+}

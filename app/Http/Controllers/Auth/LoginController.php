@@ -11,7 +11,7 @@ use Illuminate\View\View;
 class LoginController extends Controller
 {
     /**
-     * Show the login form.
+     * Show the login form (fallback if accessed directly).
      */
     public function showLoginForm(): View
     {
@@ -38,7 +38,7 @@ class LoginController extends Controller
                 return redirect()->intended(route('admin.dashboard'))->with('success', 'Welcome back, Admin ' . Auth::user()->name . '!');
             }
 
-            return redirect()->intended(route('home'))->with('success', 'Logged in successfully. Welcome back, ' . Auth::user()->name . '!');
+            return back()->with('success', 'Logged in successfully. Welcome back, ' . Auth::user()->name . '!');
         }
 
         return back()->withErrors([

@@ -42,9 +42,15 @@
                     </button>
                 </form>
             @else
-                <a href="{{ route('login') }}" class="nav-btn-white">
+                <button 
+                    type="button" 
+                    class="nav-btn-white" 
+                    onclick="openLoginModal()"
+                    aria-haspopup="dialog"
+                    aria-controls="login-modal"
+                >
                     Login
-                </a>
+                </button>
             @endauth
         </nav>
     </div>

@@ -13,7 +13,7 @@ use Illuminate\View\View;
 class RegisterController extends Controller
 {
     /**
-     * Show the registration form.
+     * Show the registration form (fallback if accessed directly).
      */
     public function showRegistrationForm(): View
     {
@@ -42,6 +42,6 @@ class RegisterController extends Controller
         // Automatically log them in after registration
         Auth::login($user);
 
-        return redirect()->route('home')->with('success', 'Account created successfully! Welcome to KUPKOP, ' . $user->name . '.');
+        return back()->with('success', 'Account created successfully! Welcome to Kupkop, ' . $user->name . '.');
     }
 }
