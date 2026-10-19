@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\PostController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -17,6 +18,12 @@ use Illuminate\Support\Facades\Route;
 
 // --- Public Routes ---
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// --- My Posts & Post Creation Flow ---
+Route::get('/my-posts', [PostController::class, 'index'])->name('my-posts');
+Route::post('/posts', [PostController::class, 'store'])->name('posts.store');
+Route::patch('/posts/{pet}/adopt', [PostController::class, 'markAsAdopted'])->name('posts.adopt');
+Route::patch('/requests/{requestRecord}/status', [PostController::class, 'updateRequestStatus'])->name('requests.status');
 
 
 // --- Authentication Routes (Guest Only) ---

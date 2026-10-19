@@ -1446,3 +1446,512 @@ body.modal-open {
         grid-template-columns: 1fr;
     }
 }
+
+/* ==========================================================================
+   My Posts Dashboard & Create Post Modal Styles
+   ========================================================================== */
+
+.my-posts-container {
+    padding: 2.5rem 1.5rem 4rem;
+}
+
+.my-posts-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2.25rem;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.page-title {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--brand-dark-brown);
+    line-height: 1.25;
+}
+
+.page-subtitle {
+    font-size: 1.05rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.btn-create-post {
+    background-color: var(--brand-dark-brown);
+    color: #FFFFFF;
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 0.75rem 1.4rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 6px -1px rgba(74, 46, 43, 0.2);
+}
+
+.btn-create-post span {
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
+.btn-create-post:hover {
+    background-color: var(--brand-dark-brown-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px -2px rgba(74, 46, 43, 0.25);
+}
+
+/* Dashboard Sections & Tables */
+.dashboard-section {
+    margin-bottom: 2.5rem;
+}
+
+.section-title-bar {
+    margin-bottom: 1rem;
+}
+
+.section-title-bar h2 {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--brand-dark-brown);
+}
+
+.table-card {
+    background: #FFFFFF;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.kupkop-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.92rem;
+}
+
+.kupkop-table th {
+    background-color: #F9FAFB;
+    color: var(--text-muted);
+    font-weight: 700;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+}
+
+.kupkop-table td {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.kupkop-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.kupkop-table tbody tr:hover {
+    background-color: #FAFAFA;
+}
+
+/* Table Cells */
+.table-pet-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background-color: #F3F4F6;
+}
+
+.table-pet-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.pet-table-name {
+    font-weight: 800;
+    color: var(--brand-dark-brown);
+    font-size: 1.05rem;
+    display: block;
+}
+
+.pet-table-id {
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* Status Pills */
+.status-pill {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.status-pill-available {
+    background-color: #DEF7EC;
+    color: #03543F;
+}
+
+.status-pill-pending {
+    background-color: #FEF08A;
+    color: #713F12;
+}
+
+.status-pill-adopted {
+    background-color: #E5E7EB;
+    color: #374151;
+}
+
+.status-pill-declined {
+    background-color: #FDE8E8;
+    color: #9B1C1C;
+}
+
+.badge-requested-pet {
+    background-color: #FFF9D0;
+    color: var(--brand-dark-brown);
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 0.375rem;
+    font-size: 0.85rem;
+}
+
+/* Table Action Buttons */
+.table-actions-inline {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-table-edit {
+    background-color: #F3F4F6;
+    color: #374151;
+    border: 1px solid #D1D5DB;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.375rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-table-edit:hover {
+    background-color: #E5E7EB;
+}
+
+.btn-table-adopt {
+    background-color: #FEF08A;
+    color: #713F12;
+    border: 1px solid #FACC15;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.375rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-table-adopt:hover {
+    background-color: #FDE047;
+}
+
+.btn-table-accept {
+    background-color: var(--brand-dark-brown);
+    color: #FFFFFF;
+    border: none;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.375rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-table-accept:hover {
+    background-color: var(--brand-dark-brown-hover);
+}
+
+.btn-table-decline {
+    background-color: #F3F4F6;
+    color: #6B7280;
+    border: 1px solid #D1D5DB;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.375rem;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-table-decline:hover {
+    background-color: #FDE8E8;
+    color: #9B1C1C;
+}
+
+.btn-table-message {
+    background-color: #FEF08A;
+    color: #713F12;
+    border: 1px solid #FACC15;
+    padding: 0.4rem 0.85rem;
+    border-radius: 0.375rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-table-message:hover {
+    background-color: #FDE047;
+}
+
+/* Empty States */
+.empty-state-card {
+    text-align: center;
+    padding: 3.5rem 1.5rem;
+}
+
+.empty-icon {
+    font-size: 2.75rem;
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.empty-state-card h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.35rem;
+}
+
+.empty-feed-card {
+    grid-column: 1 / -1;
+    text-align: center;
+    background: #FFFFFF;
+    border-radius: 0.75rem;
+    border: 1px dashed var(--border-color);
+    padding: 3rem 1.5rem;
+}
+
+.badge-adopted {
+    background-color: #6B7280;
+    color: #FFFFFF;
+}
+
+/* ==========================================================================
+   Create Post Modal Styles
+   ========================================================================== */
+
+.create-post-dialog {
+    max-width: 780px;
+    padding: 2.25rem;
+}
+
+.create-modal-header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1.25rem;
+    margin-bottom: 1.75rem;
+    padding-right: 2.5rem;
+}
+
+.create-modal-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    color: var(--brand-dark-brown);
+    line-height: 1.25;
+}
+
+.create-modal-subtitle {
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+}
+
+.create-post-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+.form-section {
+    background-color: #FAFAFA;
+    border: 1px solid var(--border-color);
+    border-radius: 0.75rem;
+    padding: 1.35rem;
+}
+
+.font-bold {
+    font-weight: 700;
+    font-size: 1.05rem;
+    color: var(--brand-dark-brown);
+    display: block;
+    margin-bottom: 1rem;
+}
+
+/* Upload Dropzone */
+.upload-dropzone {
+    border: 2px dashed #D1D5DB;
+    border-radius: 0.75rem;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    background-color: #FFFFFF;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.upload-dropzone:hover {
+    border-color: var(--brand-dark-brown);
+    background-color: #FFFDF5;
+}
+
+.upload-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.upload-title {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--brand-dark-brown);
+}
+
+.upload-hint {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.image-preview-container {
+    margin-top: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.image-preview-container img {
+    max-width: 220px;
+    max-height: 150px;
+    border-radius: 0.5rem;
+    object-fit: cover;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.preview-filename {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+}
+
+/* Form Grids */
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.gender-radio-group {
+    display: flex;
+    gap: 1rem;
+}
+
+.radio-card {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    border: 1px solid var(--border-color);
+    background-color: #FFFFFF;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.radio-card:hover {
+    border-color: var(--brand-dark-brown);
+}
+
+.textarea-field {
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.5;
+}
+
+/* Modal Footer Buttons */
+.create-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 0.5rem;
+}
+
+.btn-draft {
+    background-color: #F3F4F6;
+    color: #374151;
+    border: 1px solid #D1D5DB;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-draft:hover {
+    background-color: #E5E7EB;
+}
+
+.btn-submit-post {
+    background-color: var(--brand-dark-brown);
+    color: #FFFFFF;
+    border: none;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.75rem 1.75rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 6px -1px rgba(74, 46, 43, 0.2);
+}
+
+.btn-submit-post:hover {
+    background-color: var(--brand-dark-brown-hover);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 680px) {
+    .form-grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .create-modal-footer {
+        flex-direction: column-reverse;
+        width: 100%;
+    }
+
+    .btn-draft,
+    .btn-submit-post {
+        width: 100%;
+        text-align: center;
+    }
+}

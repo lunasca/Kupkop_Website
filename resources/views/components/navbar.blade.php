@@ -7,7 +7,7 @@
                 <span class="brand-name">Kupkop</span>
             </a>
             <span class="brand-divider">|</span>
-            <span class="brand-subtext">Brgy. 176-F Pet Adoption</span>
+            <span class="brand-subtext">Brgy. San Antonio Pet Adoption</span>
         </div>
 
         {{-- Nav Links --}}
@@ -16,7 +16,7 @@
                 Home
             </a>
 
-            <a href="{{ route('home') }}#pets" class="nav-link-item">
+            <a href="{{ route('my-posts') }}" class="nav-link-item {{ request()->routeIs('my-posts') ? 'active' : '' }}">
                 My Posts
             </a>
 

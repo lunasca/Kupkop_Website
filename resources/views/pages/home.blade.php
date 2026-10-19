@@ -78,7 +78,7 @@
                 {{-- Status Dropdown --}}
                 <div class="filter-group">
                     <select name="status" class="filter-select">
-                        <option value="available" selected>Status: Available</option>
+                        <option value="available" {{ request('status', 'available') == 'available' ? 'selected' : '' }}>Status: Available</option>
                         <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
                         <option value="all" {{ request('status') == 'all' ? 'selected' : '' }}>All Statuses</option>
                     </select>
@@ -95,13 +95,13 @@
     </div>
 </section>
 
-{{-- 3. Recently Listed Pets Section --}}
+{{-- 3. Recently Listed Pets Section (Dynamic Feed from Database) --}}
 <section class="pets-section" id="pets">
     <div class="site-container">
         {{-- Section Header with Pet Count --}}
         <div class="section-header">
             <h2 class="section-title">
-                Recently Listed Pets <span class="pets-count-badge">({{ count($pets ?? []) }} Available)</span>
+                Recently Listed Pets <span class="pets-count-badge">({{ $pets->count() }} Available)</span>
             </h2>
         </div>
 
@@ -110,7 +110,12 @@
             @forelse($pets as $pet)
                 <x-pet-card :pet="$pet" />
             @empty
-                <p class="text-muted">No pets currently listed.</p>
+                <div class="empty-feed-card">
+                    <span class="empty-icon">🐾</span>
+                    <h3>No pets found matching your criteria</h3>
+                    <p class="text-muted">Try clearing the search filters or check back soon for newly rescued barangay animals.</p>
+                    <a href="{{ route('home') }}" class="btn-filter-yellow mt-2">Clear Filters</a>
+                </div>
             @endforelse
         </div>
     </div>
@@ -243,7 +248,7 @@
                     <h4 class="story-title">RESCUE STORY &amp; PERSONALITY:</h4>
                     <div class="story-box">
                         <p id="modal-spec-story" class="story-text">
-                            Bantay was rescued wandering near the barangay covered basketball court during a rainstorm. He is energetic, very loving, accustomed to children, and already responds well to gentle commands. He is looking for a forever family with a secure yard or indoor accommodations.
+                            Rescued wandering near community facilities. Loving, vaccinated, and seeking a safe permanent home.
                         </p>
                     </div>
                 </div>
@@ -275,9 +280,35 @@
     </div>
 </div>
 
-{{-- Pass Pet Data cleanly into JavaScript --}}
+{{-- Pass Dynamic Pet Data into JavaScript --}}
+@php
+    $petsJson = $pets->map(function($p) {
+        return [
+            'id' => $p->id,
+            'name' => $p->name,
+            'species' => $p->species,
+            'species_label' => $p->species . ' (' . (strtolower($p->species) === 'cat' ? 'Feline' : 'Canine') . ')',
+            'breed' => $p->breed ?? 'Mixed Breed',
+            'breed_full' => $p->breed ? ($p->breed . ' (Barangay Rescue)') : 'Philippine Native / Mixed Breed',
+            'age' => $p->age,
+            'age_full' => $p->age,
+            'gender' => $p->gender,
+            'gender_full' => $p->gender . ($p->is_spayed_neutered ? ' (Spayed/Neutered)' : ' (Intact)'),
+            'status' => $p->status,
+            'location' => $p->location ?? 'Brgy. San Antonio, Pasig City',
+            'rescuer_id' => $p->rescuer_id ?? '#RES-0492',
+            'posted_by' => $p->posted_by ?? 'Barangay Animal Welfare Committee',
+            'rescue_date' => $p->created_at ? $p->created_at->format('F d, Y') : 'Recent',
+            'health_condition' => trim(($p->vaccination_status ? $p->vaccination_status . ', ' : '') . ($p->deworming_status ? $p->deworming_status . ', ' : '') . ($p->special_health_notes ?? 'Healthy & Active'), ', '),
+            'description' => $p->description,
+            'story' => $p->description,
+            'image' => $p->image_url,
+        ];
+    });
+@endphp
+
 <script>
-    const kupkopPetsData = @json($pets ?? []);
+    const kupkopPetsData = @json($petsJson);
     let activePetRecord = null;
     let activeGallery = [];
 
@@ -296,20 +327,22 @@
         statusBadge.textContent = 'Status: ' + pet.status;
         if (pet.status.toLowerCase() === 'pending') {
             statusBadge.className = 'badge-modal-status status-pending';
+        } else if (pet.status.toLowerCase() === 'adopted') {
+            statusBadge.className = 'badge-modal-status status-adopted';
         } else {
             statusBadge.className = 'badge-modal-status status-available';
         }
 
-        // Left Column: Images & Gallery
+        // Left Column: Images
         document.getElementById('modal-pet-image').src = pet.image;
         document.getElementById('modal-pet-image').alt = pet.name;
         document.getElementById('modal-image-badge').textContent = (pet.status.toLowerCase() === 'available') 
             ? 'Available for Adoption' 
-            : 'Adoption Pending';
+            : pet.status;
         document.getElementById('modal-rescuer-id').textContent = 'Rescuer Verification ID: ' + (pet.rescuer_id || '#RES-0492');
 
-        // Setup gallery images
-        activeGallery = [pet.image, ...(pet.gallery || [])];
+        // Gallery
+        activeGallery = [pet.image, pet.image, pet.image];
         for (let i = 0; i < 3; i++) {
             const thumbImg = document.getElementById('modal-thumb-' + i);
             if (thumbImg) {
@@ -319,14 +352,14 @@
         }
 
         // Right Column: Specifications
-        document.getElementById('modal-spec-species').textContent = pet.species_label || (pet.species + ' (' + (pet.species === 'Cat' ? 'Feline' : 'Canine') + ')');
-        document.getElementById('modal-spec-breed').textContent = pet.breed_full || pet.breed;
-        document.getElementById('modal-spec-age').textContent = pet.age_full || pet.age;
-        document.getElementById('modal-spec-gender').textContent = pet.gender_full || pet.gender;
-        document.getElementById('modal-spec-health').textContent = pet.health_condition || 'Vaccinated, Dewormed, Healthy & active';
-        document.getElementById('modal-spec-date').textContent = pet.rescue_date || 'October 14, 2024';
-        document.getElementById('modal-spec-posted').textContent = pet.posted_by || 'Barangay Animal Welfare Committee';
-        document.getElementById('modal-spec-story').textContent = pet.story || pet.description;
+        document.getElementById('modal-spec-species').textContent = pet.species_label;
+        document.getElementById('modal-spec-breed').textContent = pet.breed_full;
+        document.getElementById('modal-spec-age').textContent = pet.age_full;
+        document.getElementById('modal-spec-gender').textContent = pet.gender_full;
+        document.getElementById('modal-spec-health').textContent = pet.health_condition || 'Vaccinated & Dewormed';
+        document.getElementById('modal-spec-date').textContent = pet.rescue_date;
+        document.getElementById('modal-spec-posted').textContent = pet.posted_by;
+        document.getElementById('modal-spec-story').textContent = pet.story;
 
         // Show Modal
         const modal = document.getElementById('pet-details-modal');
@@ -337,8 +370,6 @@
     function swapMainImage(index) {
         if (!activeGallery || !activeGallery[index]) return;
         document.getElementById('modal-pet-image').src = activeGallery[index];
-        
-        // Highlight active thumbnail
         for (let i = 0; i < 3; i++) {
             const thumb = document.getElementById('modal-thumb-' + i);
             if (thumb && thumb.parentElement) {
@@ -361,7 +392,6 @@
         }
     }
 
-    // Keyboard navigation (Esc to close)
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape') {
             closePetModal();
@@ -370,12 +400,12 @@
 
     function handleAdoptAction() {
         if (!activePetRecord) return;
-        alert('Adoption application for ' + activePetRecord.name + ' has been initiated! You can fill out the barangay verification form next.');
+        alert('Adoption inquiry for ' + activePetRecord.name + ' has been registered! You can view or manage requests in My Posts.');
     }
 
     function handleContactAction() {
         if (!activePetRecord) return;
-        alert('Opening chat inquiry with ' + (activePetRecord.posted_by || 'the post author') + ' regarding ' + activePetRecord.name + '...');
+        alert('Opening chat inquiry with ' + activePetRecord.posted_by + ' regarding ' + activePetRecord.name + '...');
     }
 </script>
 @endsection
