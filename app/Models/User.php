@@ -23,6 +23,7 @@ class User extends Authenticatable
         'email',
         'password',
         'is_admin',
+        'requests_last_viewed_at',
     ];
 
     /**
@@ -43,9 +44,25 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_admin' => 'boolean',
+            'email_verified_at'        => 'datetime',
+            'password'                 => 'hashed',
+            'is_admin'                 => 'boolean',
+            'requests_last_viewed_at'  => 'datetime',
         ];
+    }
+
+    public function sentMessages()
+    {
+        return $this->hasMany(Message::class, 'sender_id');
+    }
+
+    public function receivedMessages()
+    {
+        return $this->hasMany(Message::class, 'receiver_id');
+    }
+
+    public function pets()
+    {
+        return $this->hasMany(Pet::class);
     }
 }

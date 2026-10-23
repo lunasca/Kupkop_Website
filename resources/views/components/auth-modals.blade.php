@@ -22,24 +22,18 @@
                 onclick="closeLoginModal()" 
                 aria-label="Close modal"
             >
-                &times;
+                <x-lucide-x class="modal-close-icon" />
             </button>
 
             <div class="auth-card-modal">
                 <div class="auth-header">
-                    <span class="auth-modal-badge">🐾 Member Access</span>
                     <h2 id="login-modal-title">Welcome Back</h2>
                     <p class="text-muted">Sign in to your {{ config('app.name', 'Kupkop') }} account.</p>
                 </div>
 
-                {{-- Quick Demo Credentials Helper --}}
-                <div class="demo-account-hint">
-                    <p class="demo-hint-title">💡 Quick Test Credentials:</p>
-                    <p>User: <code>user@kupkop.test</code> | Password: <code>password123</code></p>
-                </div>
-
                 <form method="POST" action="{{ route('login') }}" class="auth-form" id="login-modal-form">
                     @csrf
+                    <input type="hidden" name="auth_action" value="login">
 
                     {{-- Email Address --}}
                     <div class="form-group">
@@ -62,15 +56,27 @@
                     {{-- Password --}}
                     <div class="form-group">
                         <label for="modal_login_password">Password</label>
-                        <input
-                            id="modal_login_password"
-                            type="password"
-                            name="password"
-                            autocomplete="current-password"
-                            required
-                            placeholder="Enter your password"
-                            class="form-control @error('password') is-invalid @enderror"
-                        >
+                        <div class="password-input-wrapper">
+                            <input
+                                id="modal_login_password"
+                                type="password"
+                                name="password"
+                                autocomplete="current-password"
+                                required
+                                placeholder="Enter your password"
+                                class="form-control @error('password') is-invalid @enderror"
+                            >
+                            <button 
+                                type="button" 
+                                class="password-toggle-btn" 
+                                onclick="togglePasswordVisibility('modal_login_password', this)"
+                                aria-label="Show password"
+                                title="Show password"
+                            >
+                                <x-lucide-eye class="icon-eye" style="width: 18px; height: 18px; stroke-width: 2;" />
+                                <x-lucide-eye-off class="icon-eye-off" style="width: 18px; height: 18px; stroke-width: 2; display: none;" />
+                            </button>
+                        </div>
                         @error('password')
                             <span class="form-error">{{ $message }}</span>
                         @enderror
@@ -114,22 +120,22 @@
                 onclick="closeRegisterModal()" 
                 aria-label="Close modal"
             >
-                &times;
+                <x-lucide-x class="modal-close-icon" />
             </button>
 
             <div class="auth-card-modal">
                 <div class="auth-header">
-                    <span class="auth-modal-badge">🐾 Join Our Community</span>
                     <h2 id="register-modal-title">Create an Account</h2>
                     <p class="text-muted">Join {{ config('app.name', 'Kupkop') }} to adopt pets and post rescues.</p>
                 </div>
 
                 <form method="POST" action="{{ route('register') }}" class="auth-form" id="register-modal-form">
                     @csrf
+                    <input type="hidden" name="auth_action" value="register">
 
                     {{-- Full Name --}}
                     <div class="form-group">
-                        <label for="modal_register_name">Full Name *</label>
+                        <label for="modal_register_name">Full Name</label>
                         <input
                             id="modal_register_name"
                             type="text"
@@ -146,7 +152,7 @@
 
                     {{-- Email Address --}}
                     <div class="form-group">
-                        <label for="modal_register_email">Email Address *</label>
+                        <label for="modal_register_email">Email Address</label>
                         <input
                             id="modal_register_email"
                             type="email"
@@ -163,15 +169,27 @@
 
                     {{-- Password --}}
                     <div class="form-group">
-                        <label for="modal_register_password">Password (Min. 6 chars) *</label>
-                        <input
-                            id="modal_register_password"
-                            type="password"
-                            name="password"
-                            required
-                            placeholder="Create a strong password"
-                            class="form-control @error('password') is-invalid @enderror"
-                        >
+                        <label for="modal_register_password">Password (Min. 6 chars)</label>
+                        <div class="password-input-wrapper">
+                            <input
+                                id="modal_register_password"
+                                type="password"
+                                name="password"
+                                required
+                                placeholder="Create a strong password"
+                                class="form-control @error('password') is-invalid @enderror"
+                            >
+                            <button 
+                                type="button" 
+                                class="password-toggle-btn" 
+                                onclick="togglePasswordVisibility('modal_register_password', this)"
+                                aria-label="Show password"
+                                title="Show password"
+                            >
+                                <x-lucide-eye class="icon-eye" style="width: 18px; height: 18px; stroke-width: 2;" />
+                                <x-lucide-eye-off class="icon-eye-off" style="width: 18px; height: 18px; stroke-width: 2; display: none;" />
+                            </button>
+                        </div>
                         @error('password')
                             <span class="form-error">{{ $message }}</span>
                         @enderror
@@ -179,15 +197,27 @@
 
                     {{-- Confirm Password --}}
                     <div class="form-group">
-                        <label for="modal_register_password_confirmation">Confirm Password *</label>
-                        <input
-                            id="modal_register_password_confirmation"
-                            type="password"
-                            name="password_confirmation"
-                            required
-                            placeholder="Re-type your password"
-                            class="form-control"
-                        >
+                        <label for="modal_register_password_confirmation">Confirm Password</label>
+                        <div class="password-input-wrapper">
+                            <input
+                                id="modal_register_password_confirmation"
+                                type="password"
+                                name="password_confirmation"
+                                required
+                                placeholder="Re-type your password"
+                                class="form-control"
+                            >
+                            <button 
+                                type="button" 
+                                class="password-toggle-btn" 
+                                onclick="togglePasswordVisibility('modal_register_password_confirmation', this)"
+                                aria-label="Show password"
+                                title="Show password"
+                            >
+                                <x-lucide-eye class="icon-eye" style="width: 18px; height: 18px; stroke-width: 2;" />
+                                <x-lucide-eye-off class="icon-eye-off" style="width: 18px; height: 18px; stroke-width: 2; display: none;" />
+                            </button>
+                        </div>
                     </div>
 
                     <button type="submit" class="btn-submit-auth">Create Account</button>
@@ -276,11 +306,11 @@
         });
 
         // Auto-reopen appropriate modal on validation error
-        @if($errors->has('name') || ($errors->any() && old('name')))
+        @if(old('auth_action') === 'register' || $errors->has('name') || $errors->has('password_confirmation'))
             document.addEventListener('DOMContentLoaded', function() {
                 openRegisterModal();
             });
-        @elseif($errors->any() && !old('name'))
+        @elseif(old('auth_action') === 'login' || ($errors->any() && old('auth_action') !== 'register'))
             document.addEventListener('DOMContentLoaded', function() {
                 openLoginModal();
             });

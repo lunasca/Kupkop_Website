@@ -15,7 +15,7 @@
             <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}" class="pet-image" loading="lazy">
         @else
             <div class="pet-image-placeholder">
-                <span>{{ $isCat ? '🐱' : '🐶' }}</span>
+                <x-lucide-paw-print style="width: 44px; height: 44px; stroke-width: 1.5; color: #8C756B; opacity: 0.6;" />
             </div>
         @endif
 
@@ -28,14 +28,21 @@
     <div class="pet-card-body">
         <div class="pet-header">
             <h3 class="pet-name">{{ $pet->name }}</h3>
-            <span class="pet-type-pill" title="{{ $pet->species }}">
-                {{ $isCat ? '🐱 Cat' : '🐶 Dog' }}
-            </span>
+            <span class="pet-type-pill">{{ ucfirst($pet->species ?? ($isCat ? 'Cat' : 'Dog')) }}</span>
         </div>
 
-        <p class="pet-details">
-            {{ $pet->breed }} • {{ $pet->age }} • {{ $pet->gender }}
-        </p>
+        <div class="pet-details-pills">
+            <span class="pet-detail-pill">{{ $pet->breed }}</span>
+            <span class="pet-detail-pill">{{ $pet->age }}</span>
+            <span class="pet-detail-pill">{{ $pet->gender }}</span>
+        </div>
+
+        @if(!empty($pet->location))
+            <p class="pet-location" style="display: flex; align-items: center; gap: 0.3rem; font-size: 0.8rem; color: #8C756B; margin: 0.4rem 0 0.5rem 0;">
+                <x-lucide-map-pin style="width: 13px; height: 13px; stroke-width: 2; flex-shrink: 0; color: #D97706;" />
+                <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $pet->location }}</span>
+            </p>
+        @endif
 
         <p class="pet-description">
             {{ Str::limit($pet->description, 95) }}
@@ -49,7 +56,7 @@
                 aria-haspopup="dialog"
                 aria-controls="pet-details-modal"
             >
-                View Details
+                Meet {{ $pet->name }}
             </button>
         </div>
     </div>

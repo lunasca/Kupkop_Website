@@ -27,21 +27,25 @@ class RegisterController extends Controller
     {
         $validated = $request->validate([
             'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'email'    => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'password' => ['required', 'string', 'min:6', 'confirmed'],
         ]);
 
-        // Create the user (standard user by default: is_admin = false)
+        $email = strtolower(trim($validated['email']));
+        $name = trim($validated['name']);
+
+        // Create the user
         $user = User::create([
-            'name'     => $validated['name'],
-            'email'    => $validated['email'],
+            'name'     => $name,
+            'email'    => $email,
             'password' => Hash::make($validated['password']),
             'is_admin' => false,
         ]);
 
         // Automatically log them in after registration
         Auth::login($user);
+        $request->session()->regenerate();
 
-        return back()->with('success', 'Account created successfully! Welcome to Kupkop, ' . $user->name . '.');
+        return redirect()->intended(route('home'))->with('auth_success', 'Account created successfully! Welcome to Kupkop, ' . $user->name . '.');
     }
 }

@@ -15,12 +15,21 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Create a Default Admin User for testing
+        // 1. Create Default Admin Users
         $admin = User::firstOrCreate(
             ['email' => 'admin@kupkop.test'],
             [
                 'name'     => 'Shelter Admin',
                 'password' => Hash::make('password123'),
+                'is_admin' => true,
+            ]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'adoptme@gmail.com'],
+            [
+                'name'     => 'Kupkop Administrator',
+                'password' => Hash::make('admin123!'),
                 'is_admin' => true,
             ]
         );

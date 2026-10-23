@@ -28,17 +28,18 @@ class LoginController extends Controller
             'password' => ['required', 'string'],
         ]);
 
+        $credentials['email'] = strtolower(trim($credentials['email']));
+
         $remember = $request->boolean('remember');
 
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
-            // If user is admin, take them to the admin dashboard
             if (Auth::user()->is_admin) {
-                return redirect()->intended(route('admin.dashboard'))->with('success', 'Welcome back, Admin ' . Auth::user()->name . '!');
+                return redirect()->intended(route('admin.dashboard'))->with('auth_success', 'Welcome to Admin Dashboard, ' . Auth::user()->name . '!');
             }
 
-            return back()->with('success', 'Logged in successfully. Welcome back, ' . Auth::user()->name . '!');
+            return redirect()->intended(route('home'))->with('auth_success', 'Logged in successfully. Welcome back, ' . Auth::user()->name . '!');
         }
 
         return back()->withErrors([
@@ -56,6 +57,6 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('home')->with('success', 'You have been logged out.');
+        return redirect()->route('home');
     }
 }

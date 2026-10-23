@@ -51,14 +51,26 @@
             {{-- Password --}}
             <div class="form-group">
                 <label for="password">Password</label>
-                <input
-                    id="password"
-                    type="password"
-                    name="password"
-                    required
-                    placeholder="Minimum 6 characters"
-                    class="form-control @error('password') is-invalid @enderror"
-                >
+                <div class="password-input-wrapper">
+                    <input
+                        id="password"
+                        type="password"
+                        name="password"
+                        required
+                        placeholder="Minimum 6 characters"
+                        class="form-control @error('password') is-invalid @enderror"
+                    >
+                    <button 
+                        type="button" 
+                        class="password-toggle-btn" 
+                        onclick="togglePasswordVisibility('password', this)"
+                        aria-label="Show password"
+                        title="Show password"
+                    >
+                        <x-lucide-eye class="icon-eye" style="width: 18px; height: 18px; stroke-width: 2;" />
+                        <x-lucide-eye-off class="icon-eye-off" style="width: 18px; height: 18px; stroke-width: 2; display: none;" />
+                    </button>
+                </div>
                 @error('password')
                     <span class="form-error">{{ $message }}</span>
                 @enderror
@@ -67,14 +79,26 @@
             {{-- Confirm Password --}}
             <div class="form-group">
                 <label for="password_confirmation">Confirm Password</label>
-                <input
-                    id="password_confirmation"
-                    type="password"
-                    name="password_confirmation"
-                    required
-                    placeholder="Re-type your password"
-                    class="form-control"
-                >
+                <div class="password-input-wrapper">
+                    <input
+                        id="password_confirmation"
+                        type="password"
+                        name="password_confirmation"
+                        required
+                        placeholder="Re-type your password"
+                        class="form-control"
+                    >
+                    <button 
+                        type="button" 
+                        class="password-toggle-btn" 
+                        onclick="togglePasswordVisibility('password_confirmation', this)"
+                        aria-label="Show password"
+                        title="Show password"
+                    >
+                        <x-lucide-eye class="icon-eye" style="width: 18px; height: 18px; stroke-width: 2;" />
+                        <x-lucide-eye-off class="icon-eye-off" style="width: 18px; height: 18px; stroke-width: 2; display: none;" />
+                    </button>
+                </div>
             </div>
 
             <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
