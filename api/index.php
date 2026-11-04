@@ -41,6 +41,8 @@ putenv('DB_CONNECTION=sqlite');
 putenv("DB_DATABASE={$targetDb}");
 $_SERVER['DB_CONNECTION'] = 'sqlite';
 $_SERVER['DB_DATABASE'] = $targetDb;
+$_SERVER['HTTPS'] = 'on';
+$_SERVER['SERVER_PORT'] = 443;
 
 $_ENV['VIEW_COMPILED_PATH'] = '/tmp/views';
 putenv('VIEW_COMPILED_PATH=/tmp/views');
@@ -51,9 +53,6 @@ define('LARAVEL_START', microtime(true));
 // 4. Register Composer Autoloader
 require dirname(__DIR__) . '/vendor/autoload.php';
 
-// 4b. Force HTTPS scheme (Vercel terminates SSL at the proxy)
-\Illuminate\Support\Facades\URL::forceScheme('https');
-
 // 5. Bootstrap Laravel
 /** @var Application $app */
 $app = require_once dirname(__DIR__) . '/bootstrap/app.php';
@@ -61,6 +60,7 @@ $app = require_once dirname(__DIR__) . '/bootstrap/app.php';
 // Tell Laravel to use /tmp/storage for writable files and explicitly bind SQLite path
 $app->useStoragePath('/tmp/storage');
 $app->booted(function () use ($targetDb) {
+    \Illuminate\Support\Facades\URL::forceScheme('https');
     config([
         'database.default' => 'sqlite',
         'database.connections.sqlite.database' => $targetDb,
