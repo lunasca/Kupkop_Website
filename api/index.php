@@ -22,25 +22,35 @@ foreach ($storageDirs as $dir) {
     }
 }
 
-// 2. Copy the SQLite database to /tmp so it is writable and available
-$sourceDb = dirname(__DIR__) . '/database/database.sqlite';
-$targetDb = '/tmp/database.sqlite';
+// 2. Check if an external persistent database (e.g. Supabase, Neon PostgreSQL, MySQL) is configured
+$dbConnection = getenv('DB_CONNECTION') ?: ($_ENV['DB_CONNECTION'] ?? ($_SERVER['DB_CONNECTION'] ?? null));
+$hasExternalDb = (!empty($dbConnection) && $dbConnection !== 'sqlite')
+    || !empty(getenv('DB_HOST'))
+    || !empty(getenv('DATABASE_URL'));
 
-if (!file_exists($targetDb) || filesize($targetDb) === 0) {
-    if (file_exists($sourceDb) && filesize($sourceDb) > 0) {
-        copy($sourceDb, $targetDb);
-    } else {
-        touch($targetDb);
+$targetDb = null;
+if (!$hasExternalDb) {
+    // Fallback only: Copy the SQLite database to /tmp so it is writable and available
+    $sourceDb = dirname(__DIR__) . '/database/database.sqlite';
+    $targetDb = '/tmp/database.sqlite';
+
+    if (!file_exists($targetDb) || filesize($targetDb) === 0) {
+        if (file_exists($sourceDb) && filesize($sourceDb) > 0) {
+            copy($sourceDb, $targetDb);
+        } else {
+            touch($targetDb);
+        }
     }
+
+    $_ENV['DB_CONNECTION'] = 'sqlite';
+    $_ENV['DB_DATABASE'] = $targetDb;
+    putenv('DB_CONNECTION=sqlite');
+    putenv("DB_DATABASE={$targetDb}");
+    $_SERVER['DB_CONNECTION'] = 'sqlite';
+    $_SERVER['DB_DATABASE'] = $targetDb;
 }
 
-// 3. Set environment variables for serverless runtime
-$_ENV['DB_CONNECTION'] = 'sqlite';
-$_ENV['DB_DATABASE'] = $targetDb;
-putenv('DB_CONNECTION=sqlite');
-putenv("DB_DATABASE={$targetDb}");
-$_SERVER['DB_CONNECTION'] = 'sqlite';
-$_SERVER['DB_DATABASE'] = $targetDb;
+// 3. Set serverless HTTPS & compile path flags
 $_SERVER['HTTPS'] = 'on';
 $_SERVER['SERVER_PORT'] = 443;
 
@@ -57,15 +67,18 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 /** @var Application $app */
 $app = require_once dirname(__DIR__) . '/bootstrap/app.php';
 
-// Tell Laravel to use /tmp/storage for writable files and explicitly bind SQLite path
+// Tell Laravel to use /tmp/storage for writable cache and framework files
 $app->useStoragePath('/tmp/storage');
-$app->booted(function () use ($targetDb) {
+$app->booted(function () use ($hasExternalDb, $targetDb) {
     \Illuminate\Support\Facades\URL::forceScheme('https');
-    config([
-        'database.default' => 'sqlite',
-        'database.connections.sqlite.database' => $targetDb,
+    $configOverrides = [
         'view.compiled' => '/tmp/views',
-    ]);
+    ];
+    if (!$hasExternalDb && $targetDb) {
+        $configOverrides['database.default'] = 'sqlite';
+        $configOverrides['database.connections.sqlite.database'] = $targetDb;
+    }
+    config($configOverrides);
 });
 
 // 6. Handle incoming request

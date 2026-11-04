@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class Pet extends Model
@@ -249,19 +250,24 @@ class Pet extends Model
 
         // Handle JSON multi-image array: use first image as primary
         $decoded = json_decode($this->image_path, true);
-        if (is_array($decoded) && !empty($decoded)) {
-            $firstPath = $decoded[0];
-            if (str_starts_with($firstPath, 'http://') || str_starts_with($firstPath, 'https://')) {
-                return $firstPath;
-            }
+        $firstPath = (is_array($decoded) && !empty($decoded)) ? $decoded[0] : $this->image_path;
+
+        if (empty($firstPath)) {
+            return strtolower($this->species) === 'cat'
+                ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80'
+                : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80';
+        }
+
+        if (str_starts_with($firstPath, 'http://') || str_starts_with($firstPath, 'https://')) {
+            return $firstPath;
+        }
+
+        $disk = config('filesystems.default', 'public');
+        if ($disk === 'public' || $disk === 'local') {
             return asset('storage/' . $firstPath);
         }
 
-        if (str_starts_with($this->image_path, 'http://') || str_starts_with($this->image_path, 'https://')) {
-            return $this->image_path;
-        }
-
-        return asset('storage/' . $this->image_path);
+        return Storage::disk($disk)->url($firstPath);
     }
 
     /**
@@ -298,11 +304,15 @@ class Pet extends Model
             return [$fallback];
         }
 
-        return array_map(function (string $path) {
+        $disk = config('filesystems.default', 'public');
+        return array_map(function (string $path) use ($disk) {
             if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
                 return $path;
             }
-            return asset('storage/' . $path);
+            if ($disk === 'public' || $disk === 'local') {
+                return asset('storage/' . $path);
+            }
+            return Storage::disk($disk)->url($path);
         }, $paths);
     }
 }

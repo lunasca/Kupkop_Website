@@ -131,18 +131,19 @@ class PostController extends Controller
         $validated = $request->validate($rules, $messages);
 
         $imagePath = null;
+        $disk = config('filesystems.default', 'public');
         if ($request->hasFile('pet_images')) {
             $paths = [];
             foreach ($request->file('pet_images') as $file) {
                 if ($file && $file->isValid()) {
-                    $paths[] = $file->store('pets', 'public');
+                    $paths[] = $file->store('pets', $disk);
                 }
             }
             if (!empty($paths)) {
                 $imagePath = json_encode($paths);
             }
         } elseif ($request->hasFile('pet_image')) {
-            $path = $request->file('pet_image')->store('pets', 'public');
+            $path = $request->file('pet_image')->store('pets', $disk);
             $imagePath = json_encode([$path]);
         }
 
@@ -222,18 +223,19 @@ class PostController extends Controller
             'pet_images.max'       => 'You may upload a maximum of 5 photos per post.',
         ]);
 
+        $disk = config('filesystems.default', 'public');
         if ($request->hasFile('pet_images')) {
             $paths = [];
             foreach ($request->file('pet_images') as $file) {
                 if ($file && $file->isValid()) {
-                    $paths[] = $file->store('pets', 'public');
+                    $paths[] = $file->store('pets', $disk);
                 }
             }
             if (!empty($paths)) {
                 $validated['image_path'] = json_encode($paths);
             }
         } elseif ($request->hasFile('pet_image')) {
-            $validated['image_path'] = json_encode([$request->file('pet_image')->store('pets', 'public')]);
+            $validated['image_path'] = json_encode([$request->file('pet_image')->store('pets', $disk)]);
         }
 
         $validated['is_spayed_neutered'] = $request->boolean('is_spayed_neutered');
@@ -321,13 +323,14 @@ class PostController extends Controller
         $isArchived = ($pet->archived_at !== null);
         $petName = $pet->name ?: ($isDraft ? 'Draft' : 'Post');
 
-        // Delete associated pet image file(s) if stored locally
+        // Delete associated pet image file(s) if stored on disk
         if ($pet->image_path) {
             $decoded = json_decode($pet->image_path, true);
             $pathsToDelete = is_array($decoded) ? $decoded : [$pet->image_path];
+            $disk = config('filesystems.default', 'public');
             foreach ($pathsToDelete as $path) {
-                if ($path && Storage::disk('public')->exists($path)) {
-                    Storage::disk('public')->delete($path);
+                if ($path && !str_starts_with($path, 'http://') && !str_starts_with($path, 'https://') && Storage::disk($disk)->exists($path)) {
+                    Storage::disk($disk)->delete($path);
                 }
             }
         }
