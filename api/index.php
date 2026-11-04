@@ -1,27 +1,19 @@
 <?php
 
-// Redirect Laravel's writable paths to /tmp (Vercel's only writable directory)
-$_ENV['APP_CONFIG_CACHE'] = '/tmp/config.php';
-$_ENV['APP_EVENTS_CACHE'] = '/tmp/events.php';
-$_ENV['APP_PACKAGES_CACHE'] = '/tmp/packages.php';
-$_ENV['APP_ROUTES_CACHE'] = '/tmp/routes.php';
-$_ENV['APP_SERVICES_CACHE'] = '/tmp/services.php';
-$_ENV['VIEW_COMPILED_PATH'] = '/tmp/views';
-$_ENV['LOG_CHANNEL'] = 'stderr';
-$_ENV['SESSION_DRIVER'] = 'cookie';
-$_ENV['CACHE_STORE'] = 'array';
+use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 
-// Create the views directory in /tmp
-if (!is_dir('/tmp/views')) {
-    mkdir('/tmp/views', 0755, true);
-}
-
-// Create a writable storage structure in /tmp
+// 1. Prepare writable storage and cache paths in /tmp (Vercel serverless environment)
 $storageDirs = [
+    '/tmp/storage',
+    '/tmp/storage/app',
+    '/tmp/storage/framework',
+    '/tmp/storage/framework/cache',
+    '/tmp/storage/framework/cache/data',
     '/tmp/storage/framework/sessions',
     '/tmp/storage/framework/views',
-    '/tmp/storage/framework/cache',
     '/tmp/storage/logs',
+    '/tmp/views',
 ];
 
 foreach ($storageDirs as $dir) {
@@ -30,5 +22,41 @@ foreach ($storageDirs as $dir) {
     }
 }
 
-// Forward to Laravel's public/index.php
-require __DIR__ . '/../public/index.php';
+// 2. Copy the SQLite database to /tmp so it is writable and available
+$sourceDb = dirname(__DIR__) . '/database/database.sqlite';
+$targetDb = '/tmp/database.sqlite';
+
+if (!file_exists($targetDb)) {
+    if (file_exists($sourceDb)) {
+        copy($sourceDb, $targetDb);
+    } else {
+        touch($targetDb);
+    }
+}
+
+// 3. Set environment variables for serverless runtime
+$_ENV['DB_CONNECTION'] = 'sqlite';
+$_ENV['DB_DATABASE'] = $targetDb;
+putenv('DB_CONNECTION=sqlite');
+putenv("DB_DATABASE={$targetDb}");
+$_SERVER['DB_CONNECTION'] = 'sqlite';
+$_SERVER['DB_DATABASE'] = $targetDb;
+
+$_ENV['VIEW_COMPILED_PATH'] = '/tmp/views';
+putenv('VIEW_COMPILED_PATH=/tmp/views');
+$_SERVER['VIEW_COMPILED_PATH'] = '/tmp/views';
+
+define('LARAVEL_START', microtime(true));
+
+// 4. Register Composer Autoloader
+require dirname(__DIR__) . '/vendor/autoload.php';
+
+// 5. Bootstrap Laravel
+/** @var Application $app */
+$app = require_once dirname(__DIR__) . '/bootstrap/app.php';
+
+// Tell Laravel to use /tmp/storage for writable files
+$app->useStoragePath('/tmp/storage');
+
+// 6. Handle incoming request
+$app->handleRequest(Request::capture());
