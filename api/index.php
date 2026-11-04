@@ -26,8 +26,8 @@ foreach ($storageDirs as $dir) {
 $sourceDb = dirname(__DIR__) . '/database/database.sqlite';
 $targetDb = '/tmp/database.sqlite';
 
-if (!file_exists($targetDb)) {
-    if (file_exists($sourceDb)) {
+if (!file_exists($targetDb) || filesize($targetDb) === 0) {
+    if (file_exists($sourceDb) && filesize($sourceDb) > 0) {
         copy($sourceDb, $targetDb);
     } else {
         touch($targetDb);
@@ -55,8 +55,15 @@ require dirname(__DIR__) . '/vendor/autoload.php';
 /** @var Application $app */
 $app = require_once dirname(__DIR__) . '/bootstrap/app.php';
 
-// Tell Laravel to use /tmp/storage for writable files
+// Tell Laravel to use /tmp/storage for writable files and explicitly bind SQLite path
 $app->useStoragePath('/tmp/storage');
+$app->booted(function () use ($targetDb) {
+    config([
+        'database.default' => 'sqlite',
+        'database.connections.sqlite.database' => $targetDb,
+        'view.compiled' => '/tmp/views',
+    ]);
+});
 
 // 6. Handle incoming request
 $app->handleRequest(Request::capture());
