@@ -51,6 +51,9 @@ define('LARAVEL_START', microtime(true));
 // 4. Register Composer Autoloader
 require dirname(__DIR__) . '/vendor/autoload.php';
 
+// 4b. Force HTTPS scheme (Vercel terminates SSL at the proxy)
+\Illuminate\Support\Facades\URL::forceScheme('https');
+
 // 5. Bootstrap Laravel
 /** @var Application $app */
 $app = require_once dirname(__DIR__) . '/bootstrap/app.php';
