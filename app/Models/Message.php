@@ -17,11 +17,48 @@ class Message extends Model
         'subject',
         'message',
         'is_read',
+        // Edit tracking
+        'original_message',
+        'edited_at',
+        // Per-message delete flags
+        'deleted_by_sender',
+        'deleted_by_receiver',
+        'deleted_for_everyone',
+        // Per-conversation soft-delete timestamps
+        'conv_deleted_by_sender_at',
+        'conv_deleted_by_receiver_at',
     ];
 
     protected $casts = [
-        'is_read' => 'boolean',
+        'is_read'                    => 'boolean',
+        'deleted_by_sender'          => 'boolean',
+        'deleted_by_receiver'        => 'boolean',
+        'deleted_for_everyone'       => 'boolean',
+        'edited_at'                  => 'datetime',
+        'conv_deleted_by_sender_at'  => 'datetime',
+        'conv_deleted_by_receiver_at'=> 'datetime',
     ];
+
+    /**
+     * Scope: filter messages visible to a given user.
+     * A message is hidden from a user if they deleted it "for me", or if it was deleted for everyone.
+     * Note: "deleted for everyone" still shows a placeholder — filtering for that is done in formatting.
+     */
+    public function scopeVisibleTo($query, int $userId)
+    {
+        return $query->where(function ($q) use ($userId) {
+            // If user is the sender: exclude messages they deleted for themselves
+            $q->where(function ($inner) use ($userId) {
+                $inner->where('sender_id', $userId)
+                      ->where('deleted_by_sender', false);
+            })
+            // If user is the receiver: exclude messages they deleted for themselves
+            ->orWhere(function ($inner) use ($userId) {
+                $inner->where('receiver_id', $userId)
+                      ->where('deleted_by_receiver', false);
+            });
+        });
+    }
 
     /**
      * Format a timestamp into human-readable representation using Philippine Standard Time (Asia/Manila, UTC+8):

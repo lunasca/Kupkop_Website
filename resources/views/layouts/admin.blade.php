@@ -19,43 +19,31 @@
     @stack('styles')
 </head>
 <body class="admin-body">
-    <div class="admin-wrapper">
+    <div class="admin-wrapper" id="adminWrapper">
+        {{-- Mobile sidebar overlay backdrop --}}
+        <div class="admin-sidebar-overlay" id="adminSidebarOverlay" onclick="closeAdminSidebar()"></div>
+
         {{-- Admin Sidebar Component --}}
         <x-admin.sidebar />
 
         <div class="admin-main">
-            {{-- Top Admin Header Bar --}}
-            <header class="admin-topbar">
-                <div class="topbar-left">
-                    {{-- Intentionally minimal, matching screenshot --}}
-                </div>
-                <div class="topbar-actions">
-                    <a href="{{ route('home') }}" class="btn-topbar-public">
-                        <x-lucide-globe style="width: 15px; height: 15px; stroke-width: 2.2;" />
-                        <span>Public feed</span>
-                    </a>
-                    <div class="admin-user-pill">
-                        <span class="avatar-circle">{{ strtoupper(substr(Auth::user()->name ?? 'K', 0, 1)) }}</span>
-                        <span class="user-name">{{ Auth::user()->name ?? 'Kupkop Administrator' }}</span>
-                    </div>
-                    <button type="button" class="btn-topbar-logout" onclick="showAdminLogoutConfirm()">
-                        <x-lucide-log-out style="width: 14px; height: 14px; stroke-width: 2.2;" />
-                        <span>Log out</span>
-                    </button>
-                </div>
-            </header>
+            {{-- Mobile Header Bar (hamburger) --}}
+            <div class="admin-mobile-header" id="adminMobileHeader">
+                <button type="button" class="admin-mobile-toggle" id="adminMenuToggle" onclick="toggleAdminSidebar()" aria-label="Open navigation menu">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <a href="{{ route('admin.dashboard') }}" style="display: flex; align-items: center;">
+                    <img src="{{ asset('images/logo.png') }}" alt="Kupkop" style="height: 32px; width: auto;">
+                </a>
+                <div style="width: 44px;"></div>
+            </div>
 
             {{-- Main Content Area --}}
             <main class="admin-content">
-                {{-- Global Flash Messages --}}
-                @if(session('success'))
-                    <x-alert type="success" :message="session('success')" />
-                @endif
-
-                @if(session('error'))
-                    <x-alert type="error" :message="session('error')" />
-                @endif
-
                 @yield('content')
             </main>
         </div>
@@ -64,6 +52,36 @@
     <!-- Base Script -->
     <script src="{{ asset('js/app.js') }}"></script>
     @stack('scripts')
+
+    <script>
+    function toggleAdminSidebar() {
+        const sidebar = document.querySelector('.admin-sidebar');
+        const overlay = document.getElementById('adminSidebarOverlay');
+        const isOpen = sidebar.classList.contains('open');
+        if (isOpen) {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        } else {
+            sidebar.classList.add('open');
+            overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+    function closeAdminSidebar() {
+        const sidebar = document.querySelector('.admin-sidebar');
+        const overlay = document.getElementById('adminSidebarOverlay');
+        sidebar.classList.remove('open');
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+    // Close sidebar on window resize if above mobile breakpoint
+    window.addEventListener('resize', function() {
+        if (window.innerWidth > 768) {
+            closeAdminSidebar();
+        }
+    });
+    </script>
 
     {{-- =====================================================================
          Admin Logout Confirmation Modal
@@ -121,6 +139,9 @@
         </div>
     </div>
 
+    {{-- Global Profile Edit Modal for admin account details --}}
+    <x-profile-modal />
+
     <script>
         function showAdminLogoutConfirm() {
             const modal = document.getElementById('confirm-admin-logout-modal');
@@ -146,6 +167,70 @@
                     hideAdminLogoutConfirm();
                 }
             }
+        });
+
+        // Admin Custom Dropdowns Controller
+        document.addEventListener('DOMContentLoaded', function () {
+            const groups = document.querySelectorAll('.admin-custom-select-group');
+
+            function closeAllSelects() {
+                groups.forEach(g => {
+                    g.classList.remove('open');
+                    const tr = g.querySelector('.admin-custom-select-trigger');
+                    if (tr) tr.setAttribute('aria-expanded', 'false');
+                });
+            }
+
+            groups.forEach(group => {
+                const trigger = group.querySelector('.admin-custom-select-trigger');
+                const hiddenInput = group.querySelector('input[type="hidden"]');
+                const options = group.querySelectorAll('.admin-custom-select-option');
+                const labelSpan = group.querySelector('.admin-custom-select-label');
+                const prefix = group.getAttribute('data-prefix') || '';
+
+                if (!trigger) return;
+
+                trigger.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    const isOpen = group.classList.contains('open');
+                    closeAllSelects();
+                    if (!isOpen) {
+                        group.classList.add('open');
+                        trigger.setAttribute('aria-expanded', 'true');
+                    }
+                });
+
+                options.forEach(opt => {
+                    opt.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        const val = this.getAttribute('data-value');
+                        const label = this.getAttribute('data-label') || this.querySelector('span')?.textContent.trim() || '';
+
+                        options.forEach(o => o.classList.remove('selected'));
+                        this.classList.add('selected');
+
+                        if (labelSpan) labelSpan.textContent = prefix + label;
+                        if (hiddenInput) hiddenInput.value = val;
+
+                        closeAllSelects();
+
+                        const form = group.closest('form');
+                        if (form) form.submit();
+                    });
+                });
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('.admin-custom-select-group')) {
+                    closeAllSelects();
+                }
+            });
+
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    closeAllSelects();
+                }
+            });
         });
     </script>
 </body>

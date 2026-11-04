@@ -58,7 +58,7 @@ class AdminDashboardTest extends TestCase
         $response = $this->actingAs($admin)->get('/admin/dashboard');
         $response->assertStatus(200);
         $response->assertSee('Admin Dashboard');
-        $response->assertSee('Overview of pets listed in Brgy. 171.');
+        $response->assertSee('Overview of pets listed in Brgy. 176-F.');
         $response->assertSee('Total posts');
         $response->assertSee('Dogs');
         $response->assertSee('Cats');
@@ -329,9 +329,34 @@ class AdminDashboardTest extends TestCase
         $response = $this->actingAs($admin)->get('/admin/dashboard');
         $response->assertStatus(200);
         $response->assertSee('1 post to verify');
-        $response->assertSee('1 adoption request');
+        $response->assertDontSee('1 adoption request');
+        $response->assertDontSee('received an adoption request');
+        $response->assertDontSee('/my-posts');
         $response->assertSee('Maria Santos created an account');
         $response->assertSee('Brownie was posted by Maria Santos');
+    }
+
+    public function test_admin_dashboard_renders_blocked_accounts_in_needs_your_attention(): void
+    {
+        $admin = User::create([
+            'name'     => 'Shelter Admin',
+            'email'    => 'admin@kupkop.test',
+            'password' => bcrypt('password123'),
+            'is_admin' => true,
+        ]);
+
+        User::create([
+            'name'       => 'Suspended Bad User',
+            'email'      => 'suspended@example.com',
+            'password'   => bcrypt('password123'),
+            'is_admin'   => false,
+            'is_blocked' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->get('/admin/dashboard');
+        $response->assertStatus(200);
+        $response->assertSee('1 blocked account');
+        $response->assertSee('Review suspended user accounts');
     }
 
     public function test_admin_dashboard_renders_logout_confirmation_prompt(): void
@@ -364,7 +389,197 @@ class AdminDashboardTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('images/logo.png');
         $response->assertSee('alt="Kupkop Logo"', false);
-        $response->assertSee('badge-admin');
-        $response->assertSee('ADMIN');
+        $response->assertDontSee('badge-admin');
+        $response->assertSee('Settings');
+        $response->assertSee('Log out');
+        $response->assertSee('openProfileModal()', false);
+        $response->assertSee('showAdminLogoutConfirm()', false);
+    }
+
+    public function test_admin_topbar_is_removed_and_profile_modal_is_present(): void
+    {
+        $admin = User::create([
+            'name'     => 'Shelter Admin',
+            'email'    => 'admin@kupkop.test',
+            'password' => bcrypt('password123'),
+            'is_admin' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->get('/admin/dashboard');
+        $response->assertStatus(200);
+        $response->assertDontSee('admin-topbar');
+        $response->assertSee('profile-modal');
+        $response->assertSee('confirm-admin-logout-modal');
+    }
+
+    public function test_admin_summary_stat_widget_renders_on_home_feed_only_for_admin_users(): void
+    {
+        $admin = User::create([
+            'name'     => 'Kupkop Administrator',
+            'email'    => 'admin@kupkop.test',
+            'password' => bcrypt('password123'),
+            'is_admin' => true,
+        ]);
+
+        $user = User::create([
+            'name'     => 'Regular User',
+            'email'    => 'user@kupkop.test',
+            'password' => bcrypt('password123'),
+            'is_admin' => false,
+        ]);
+
+        Pet::create([
+            'user_id'     => $user->id,
+            'name'        => 'Available Pup',
+            'species'     => 'Dog',
+            'breed'       => 'Aspin',
+            'age'         => '1 yr',
+            'gender'      => 'Male',
+            'description' => 'Test',
+            'status'      => 'Available',
+            'posted_by'   => $user->name,
+        ]);
+
+        Pet::create([
+            'user_id'     => $user->id,
+            'name'        => 'Pending Kitty',
+            'species'     => 'Cat',
+            'breed'       => 'Puspin',
+            'age'         => '2 yrs',
+            'gender'      => 'Female',
+            'description' => 'Test',
+            'status'      => 'Pending',
+            'posted_by'   => $user->name,
+        ]);
+
+        // 1. Admin view: renders summary stat cards and HIDES the "+" Create Post button
+        $adminResponse = $this->actingAs($admin)->get(route('home'));
+        $adminResponse->assertStatus(200);
+        $adminResponse->assertSee('hero-admin-stats-widget');
+        $adminResponse->assertSee('Pets listed');
+        $adminResponse->assertSee('Available');
+        $adminResponse->assertSee('Pending');
+        $adminResponse->assertDontSee('btn-hero-create-post');
+        $adminResponse->assertSee('Welcome, Kupkop Administrator!');
+
+        // 2. Regular user view: does NOT see admin stats, DOES see "+" Create Post button
+        $userResponse = $this->actingAs($user)->get(route('home'));
+        $userResponse->assertStatus(200);
+        $userResponse->assertDontSee('hero-admin-stats-widget');
+        $userResponse->assertSee('btn-hero-create-post');
+        $userResponse->assertSee('Welcome, Regular User!');
+
+        // 3. Guest view: should NOT see the admin stat cards widget or create post button
+        auth()->logout();
+        $guestResponse = $this->get(route('home'));
+        $guestResponse->assertStatus(200);
+        $guestResponse->assertDontSee('hero-admin-stats-widget');
+        $guestResponse->assertDontSee('Pets listed');
+        $guestResponse->assertDontSee('btn-hero-create-post');
+    }
+
+    public function test_admin_navigation_bar_hides_home_tab_and_page_switcher(): void
+    {
+        $admin = User::create([
+            'name'     => 'Kupkop Administrator',
+            'email'    => 'admin@kupkop.test',
+            'password' => bcrypt('password123'),
+            'is_admin' => true,
+        ]);
+
+        $user = User::create([
+            'name'     => 'Regular User',
+            'email'    => 'user@kupkop.test',
+            'password' => bcrypt('password123'),
+            'is_admin' => false,
+        ]);
+
+        // 1. Admin navigation: Home tab is removed, page switcher is hidden, retains Admin Panel pill and user info
+        $adminNav = $this->actingAs($admin)->get(route('home'));
+        $adminNav->assertStatus(200);
+        $adminNav->assertDontSee('<span class="nav-label">Home</span>', false);
+        $adminNav->assertDontSee('nav-page-switcher');
+        $adminNav->assertDontSee('<span class="nav-label">My Posts</span>', false);
+        $adminNav->assertDontSee('<span class="nav-label">Messages</span>', false);
+        $adminNav->assertDontSee('nav-msg-link');
+        $adminNav->assertSee('Admin Panel');
+        $adminNav->assertSee('nav-user-display');
+        $adminNav->assertSee('Kupkop Administrator');
+        $adminNav->assertDontSee('nav-user-btn');
+        $adminNav->assertDontSee('title="Click to edit account details"', false);
+
+        // 2. Regular user navigation: Home, My Posts, and Messages all visible in page switcher
+        $userNav = $this->actingAs($user)->get(route('home'));
+        $userNav->assertStatus(200);
+        $userNav->assertSee('nav-page-switcher');
+        $userNav->assertSee('<span class="nav-label">Home</span>', false);
+        $userNav->assertSee('<span class="nav-label">My Posts</span>', false);
+        $userNav->assertSee('<span class="nav-label">Messages</span>', false);
+        $userNav->assertDontSee('Admin Panel');
+        $userNav->assertSee('nav-user-btn');
+        $userNav->assertSee('title="Click to edit account details"', false);
+        $userNav->assertSee('openProfileModal()', false);
+    }
+
+    public function test_admin_is_restricted_from_my_posts_and_redirected_to_admin_dashboard(): void
+    {
+        $admin = User::create([
+            'name'     => 'Kupkop Administrator',
+            'email'    => 'admin@kupkop.test',
+            'password' => bcrypt('password123'),
+            'is_admin' => true,
+        ]);
+
+        $user = User::create([
+            'name'     => 'Regular User',
+            'email'    => 'user@kupkop.test',
+            'password' => bcrypt('password123'),
+            'is_admin' => false,
+        ]);
+
+        // Admin attempting to visit /my-posts is redirected to /admin/dashboard with a warning
+        $response = $this->actingAs($admin)->get('/my-posts');
+        $response->assertRedirect('/admin/dashboard');
+        $response->assertSessionHas('warning');
+
+        // Follow redirect to confirm warning alert is displayed
+        $follow = $this->actingAs($admin)->get('/admin/dashboard');
+        $follow->assertStatus(200);
+        $follow->assertSee('Admin Dashboard');
+
+        // Regular user can access /my-posts normally
+        $userResponse = $this->actingAs($user)->get('/my-posts');
+        $userResponse->assertStatus(200);
+        $userResponse->assertSee('My Active Animal Posts');
+    }
+
+    public function test_admin_is_restricted_from_messages_and_redirected_to_admin_dashboard(): void
+    {
+        $admin = User::create([
+            'name'     => 'Kupkop Administrator',
+            'email'    => 'admin@kupkop.test',
+            'password' => bcrypt('password123'),
+            'is_admin' => true,
+        ]);
+
+        $user = User::create([
+            'name'     => 'Regular User',
+            'email'    => 'user@kupkop.test',
+            'password' => bcrypt('password123'),
+            'is_admin' => false,
+        ]);
+
+        // Admin attempting to visit /messages is redirected to /admin/dashboard with a warning
+        $response = $this->actingAs($admin)->get('/messages');
+        $response->assertRedirect('/admin/dashboard');
+        $response->assertSessionHas('warning');
+
+        // Admin making JSON request to /messages receives 403 Forbidden
+        $jsonResponse = $this->actingAs($admin)->getJson('/messages');
+        $jsonResponse->assertStatus(403);
+
+        // Regular user can access /messages normally
+        $userResponse = $this->actingAs($user)->get('/messages');
+        $userResponse->assertStatus(200);
     }
 }

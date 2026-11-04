@@ -13,7 +13,16 @@ class HomeController extends Controller
      */
     public function index(Request $request): View
     {
-        $query = Pet::query();
+        // Public feed: all non-archived, non-draft pets from active user accounts.
+        // Verification (is_verified) is an admin-review marker only and does NOT gate
+        // public visibility — posts appear on the feed as soon as they are published.
+        $query = Pet::with('user')
+            ->whereNull('archived_at')
+            ->where('status', '!=', 'Draft')
+            ->whereHas('user', function ($q) {
+                $q->where('status', 'active')
+                  ->whereNull('archived_at');
+            });
 
         // 1. Keyword search (Name, breed, description, barangay)
         if ($request->filled('keyword')) {
@@ -52,20 +61,46 @@ class HomeController extends Controller
             $query->where('gender', ucfirst(strtolower($request->gender)));
         }
 
-        // 5. Status filter (default: Available only — excludes Pending, Adopted, Draft)
-        if ($request->filled('status')) {
-            if ($request->status === 'all') {
-                // Show everything except Drafts
-                $query->where('status', '!=', 'Draft');
-            } elseif ($request->status === 'available') {
-                // Strictly Available — exclude Pending and everything else
-                $query->where('status', 'Available');
-            } else {
-                $query->where('status', ucfirst(strtolower($request->status)));
-            }
-        } else {
-            // Default: only Available pets
+        // Count for status tabs: All, Available, Pending, Verified
+        $countBase = Pet::query()
+            ->whereNull('archived_at')
+            ->whereHas('user', function ($q) {
+                $q->where('status', 'active')
+                  ->whereNull('archived_at');
+            })
+            ->where('status', '!=', 'Draft');
+
+        $statusCounts = [
+            'all'       => (clone $countBase)->count(),
+            'available' => (clone $countBase)->where('status', 'Available')->count(),
+            'pending'   => (clone $countBase)->where('status', 'Pending')->count(),
+            'verified'  => (clone $countBase)->where(function ($q) {
+                $q->where('is_verified', true)
+                  ->orWhereHas('user', function ($uq) {
+                      $uq->where('is_verified', true);
+                  });
+            })->count(),
+            'adopted'   => (clone $countBase)->where('status', 'Adopted')->count(),
+        ];
+
+        // 5. Status filter (default: all)
+        $selectedStatus = strtolower($request->get('status', 'all'));
+        if ($selectedStatus === 'available') {
             $query->where('status', 'Available');
+        } elseif ($selectedStatus === 'pending') {
+            $query->where('status', 'Pending');
+        } elseif ($selectedStatus === 'verified') {
+            $query->where(function ($q) {
+                $q->where('is_verified', true)
+                  ->orWhereHas('user', function ($uq) {
+                      $uq->where('is_verified', true);
+                  });
+            });
+        } elseif ($selectedStatus === 'adopted') {
+            $query->where('status', 'Adopted');
+        } else {
+            // 'all' shows everything except Drafts
+            $query->where('status', '!=', 'Draft');
         }
 
         // Fetch pets ordered with newest first
@@ -79,14 +114,25 @@ class HomeController extends Controller
             })->values();
         }
 
-        return view('pages.home', compact('pets'));
+        // 6. Admin summary stats (for conditional admin widget on the public home feed)
+        $adminStats = [
+            'total_listed' => Pet::whereNull('archived_at')->where('status', '!=', 'Draft')->count(),
+            'available'    => Pet::whereNull('archived_at')->where('status', 'Available')->count(),
+            'pending'      => Pet::whereNull('archived_at')->where('status', 'Pending')->count(),
+        ];
+
+        return view('pages.home', compact('pets', 'statusCounts', 'adminStats'));
     }
 
     /**
-     * Categorize free-text pet age into standardized filter categories.
+     * Categorize free-text pet age into standardized filter categories:
+     * - 'puppy_kitten': Puppy / Kitten (0 - 6 months)
+     * - 'junior' (or 'young'): Junior (7 - 12 months)
+     * - 'adult': Adult (1 - 7 years)
+     * - 'senior': Senior (8+ years, up to 20 years)
      *
      * @param string|null $ageStr
-     * @param string $filter 'puppy_kitten', 'young', or 'adult'
+     * @param string $filter 'puppy_kitten', 'junior', 'young', 'adult', or 'senior'
      * @return bool
      */
     public static function matchesAgeFilter(?string $ageStr, string $filter): bool
@@ -100,15 +146,20 @@ class HomeController extends Controller
             return false;
         }
 
+        $filter = strtolower($filter);
+
         // 1. Direct keyword shortcuts
         if (in_array($raw, ['puppy', 'kitten', 'pup', 'kit', 'baby'])) {
             return $filter === 'puppy_kitten';
         }
-        if (in_array($raw, ['adult', 'senior', 'mature', 'elderly', 'old'])) {
+        if (in_array($raw, ['junior', 'young', 'adolescent', 'juvenile', 'teen'])) {
+            return $filter === 'junior' || $filter === 'young';
+        }
+        if (in_array($raw, ['adult', 'mature'])) {
             return $filter === 'adult';
         }
-        if (in_array($raw, ['young', 'adolescent', 'juvenile', 'teen'])) {
-            return $filter === 'young';
+        if (in_array($raw, ['senior', 'elderly', 'old', 'geriatric'])) {
+            return $filter === 'senior';
         }
 
         // 2. Numerical value with units
@@ -146,11 +197,17 @@ class HomeController extends Controller
         if (str_contains($raw, 'puppy') || str_contains($raw, 'kitten')) {
             return $filter === 'puppy_kitten';
         }
-        if (str_contains($raw, 'senior') || str_contains($raw, 'adult')) {
+        if (str_contains($raw, 'junior')) {
+            return $filter === 'junior' || $filter === 'young';
+        }
+        if (str_contains($raw, 'senior') || str_contains($raw, 'elderly')) {
+            return $filter === 'senior';
+        }
+        if (str_contains($raw, 'adult')) {
             return $filter === 'adult';
         }
         if (str_contains($raw, 'young')) {
-            return $filter === 'young';
+            return $filter === 'junior' || $filter === 'young';
         }
 
         return false;
@@ -158,29 +215,61 @@ class HomeController extends Controller
 
     private static function classifyMonths(float $months, string $filter): bool
     {
+        // Unrealistic age over 240 months (20 years) or non-positive
+        if ($months <= 0 || $months > 240.0) {
+            return false;
+        }
+
+        // Puppy / Kitten: 0 - 6 months (≤ 6)
         if ($filter === 'puppy_kitten') {
-            return $months < 12.0;
+            return $months <= 6.0;
         }
-        if ($filter === 'young') {
-            return $months >= 12.0 && $months <= 24.0;
+
+        // Junior: 7 - 12 months (> 6 and <= 12)
+        if ($filter === 'junior' || $filter === 'young') {
+            return $months > 6.0 && $months <= 12.0;
         }
+
+        // Adult: > 12 months up to 7 years (> 12 to 84 months)
         if ($filter === 'adult') {
-            return $months >= 24.0;
+            return $months > 12.0 && $months <= 84.0;
         }
+
+        // Senior: 8+ years (> 84 to 240 months)
+        if ($filter === 'senior') {
+            return $months > 84.0 && $months <= 240.0;
+        }
+
         return false;
     }
 
     private static function classifyYears(float $years, string $filter): bool
     {
+        // Unrealistic age over 20 years or non-positive
+        if ($years <= 0 || $years > 20.0) {
+            return false;
+        }
+
+        // Puppy / Kitten: 0 - 6 months (≤ 0.5 years)
         if ($filter === 'puppy_kitten') {
-            return $years < 1.0;
+            return $years <= 0.5;
         }
-        if ($filter === 'young') {
-            return $years >= 1.0 && $years <= 2.0;
+
+        // Junior: 7 - 11 months (> 0.5 and < 1.0 years)
+        if ($filter === 'junior' || $filter === 'young') {
+            return $years > 0.5 && $years < 1.0;
         }
+
+        // Adult: 1 - 7 years (inclusive)
         if ($filter === 'adult') {
-            return $years >= 2.0;
+            return $years >= 1.0 && $years <= 7.0;
         }
+
+        // Senior: 8+ years (capped at realistic 20 years)
+        if ($filter === 'senior') {
+            return $years >= 8.0 && $years <= 20.0;
+        }
+
         return false;
     }
 }

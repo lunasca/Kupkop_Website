@@ -23,8 +23,15 @@ class PostController extends Controller
             return view('pages.my-posts', [
                 'myPets' => collect(), 
                 'incomingRequests' => collect(),
-                'myApplications' => collect()
+                'myApplications' => collect(),
+                'archivedPets' => collect()
             ]);
+        }
+
+        // Administrators are restricted from regular user My Posts page
+        if (Auth::user()->is_admin) {
+            return redirect()->route('admin.dashboard')
+                ->with('warning', 'Access to My Posts is restricted for Admin accounts. Please use the Admin Panel.');
         }
 
         $userId = Auth::id();
@@ -32,15 +39,17 @@ class PostController extends Controller
         // Stamp the "last viewed" time so the navbar badge clears after visiting
         Auth::user()->update(['requests_last_viewed_at' => now()]);
 
-        // Only show published/active posts under "My Active Animal Posts" (exclude Drafts)
+        // Only show published/active posts under "My Active Animal Posts" (exclude Drafts & Archived)
         $myPets = Pet::where('user_id', $userId)
             ->where('status', '!=', 'Draft')
+            ->whereNull('archived_at')
             ->latest()
             ->get();
 
         // Draft posts kept separately for the dedicated Drafts section
         $draftPets = Pet::where('user_id', $userId)
             ->where('status', 'Draft')
+            ->whereNull('archived_at')
             ->latest()
             ->get();
 
@@ -58,7 +67,13 @@ class PostController extends Controller
             ->latest()
             ->get();
 
-        return view('pages.my-posts', compact('myPets', 'draftPets', 'incomingRequests', 'myApplications'));
+        // Archived animal posts
+        $archivedPets = Pet::where('user_id', $userId)
+            ->whereNotNull('archived_at')
+            ->latest('archived_at')
+            ->get();
+
+        return view('pages.my-posts', compact('myPets', 'draftPets', 'incomingRequests', 'myApplications', 'archivedPets'));
     }
 
     /**
@@ -70,29 +85,65 @@ class PostController extends Controller
             return redirect()->route('home')->with('error', 'You must be logged in to post an animal for adoption.');
         }
 
+        if (Auth::user()->status === 'blocked' || Auth::user()->is_blocked || Auth::user()->archived_at !== null) {
+            abort(403, 'Your account has been blocked or removed.');
+        }
+
         $isDraft = ($request->input('action') === 'draft');
 
         $rules = [
-            'name'                 => [$isDraft ? 'nullable' : 'required', 'string', 'max:255'],
+            'name'                 => [$isDraft ? 'nullable' : 'required', 'string', 'max:30'],
             'species'              => [$isDraft ? 'nullable' : 'required', 'string', 'in:Dog,Cat,Other'],
             'breed'                => ['nullable', 'string', 'max:255'],
-            'age'                  => [$isDraft ? 'nullable' : 'required', 'string', 'max:100'],
+            'age'                  => [
+                $isDraft ? 'nullable' : 'required',
+                'string',
+                'max:100',
+                function ($attribute, $value, $fail) use ($isDraft) {
+                    if (!$isDraft && !empty($value) && !\App\Models\Pet::isRealisticAge($value)) {
+                        $fail('Please enter a realistic age for the pet (maximum 20 years).');
+                    }
+                },
+            ],
             'gender'               => [$isDraft ? 'nullable' : 'required', 'string', 'in:Male,Female'],
             'location'             => [$isDraft ? 'nullable' : 'required', 'string', 'max:255'],
             'vaccination_status'   => ['nullable', 'string', 'max:255'],
             'deworming_status'     => ['nullable', 'string', 'max:255'],
             'is_spayed_neutered'   => ['nullable', 'boolean'],
             'special_health_notes' => ['nullable', 'string'],
-            'description'          => [$isDraft ? 'nullable' : 'required', 'string'],
-            'pet_image'            => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // Max 5MB
+            'description'          => [$isDraft ? 'nullable' : 'required', 'string', 'max:300'],
+            'pet_images'           => [$isDraft ? 'nullable' : ($request->hasFile('pet_image') ? 'nullable' : 'required'), 'array', 'max:5'],
+            'pet_images.*'         => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // Max 5MB per photo
+            'pet_image'            => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'action'               => ['nullable', 'string'], // Post or Draft
         ];
 
-        $validated = $request->validate($rules);
+        $messages = [
+            'name.max'            => 'The animal name cannot exceed 30 characters.',
+            'description.max'     => 'The description cannot exceed 300 characters.',
+            'pet_images.required' => 'Please upload at least one main photo of the pet.',
+            'pet_images.max'      => 'You may upload a maximum of 5 photos per post.',
+            'pet_images.*.image'  => 'Each file must be a valid image.',
+            'pet_images.*.mimes'  => 'Only PNG, JPG, JPEG, and WEBP images are accepted.',
+            'pet_images.*.max'    => 'Each image must not exceed 5MB.',
+        ];
+
+        $validated = $request->validate($rules, $messages);
 
         $imagePath = null;
-        if ($request->hasFile('pet_image')) {
-            $imagePath = $request->file('pet_image')->store('pets', 'public');
+        if ($request->hasFile('pet_images')) {
+            $paths = [];
+            foreach ($request->file('pet_images') as $file) {
+                if ($file && $file->isValid()) {
+                    $paths[] = $file->store('pets', 'public');
+                }
+            }
+            if (!empty($paths)) {
+                $imagePath = json_encode($paths);
+            }
+        } elseif ($request->hasFile('pet_image')) {
+            $path = $request->file('pet_image')->store('pets', 'public');
+            $imagePath = json_encode([$path]);
         }
 
         $status = $isDraft ? 'Draft' : 'Available';
@@ -118,6 +169,9 @@ class PostController extends Controller
             'status'               => $status,
             'rescuer_id'           => $rescuerId,
             'posted_by'            => $postedBy,
+            // New posts always start unverified so they enter the admin review queue.
+            // Drafts are also unverified until the admin approves them once published.
+            'is_verified'          => false,
         ]);
 
         if ($isDraft) {
@@ -138,26 +192,58 @@ class PostController extends Controller
         }
 
         $validated = $request->validate([
-            'name'                 => ['required', 'string', 'max:255'],
+            'name'                 => ['required', 'string', 'max:30'],
             'species'              => ['required', 'string', 'in:Dog,Cat,Other'],
             'breed'                => ['nullable', 'string', 'max:255'],
-            'age'                  => ['required', 'string', 'max:100'],
+            'age'                  => [
+                'required',
+                'string',
+                'max:100',
+                function ($attribute, $value, $fail) {
+                    if (!empty($value) && !\App\Models\Pet::isRealisticAge($value)) {
+                        $fail('Please enter a realistic age for the pet (maximum 20 years).');
+                    }
+                },
+            ],
             'gender'               => ['required', 'string', 'in:Male,Female'],
             'location'             => ['required', 'string', 'max:255'],
             'vaccination_status'   => ['nullable', 'string', 'max:255'],
             'deworming_status'     => ['nullable', 'string', 'max:255'],
             'is_spayed_neutered'   => ['nullable', 'boolean'],
             'special_health_notes' => ['nullable', 'string'],
-            'description'          => ['required', 'string'],
+            'description'          => ['required', 'string', 'max:300'],
+            'pet_images'           => ['nullable', 'array', 'max:5'],
+            'pet_images.*'         => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'pet_image'            => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'status'               => ['required', 'string', 'in:Available,Draft,Adopted'],
+        ], [
+            'name.max'             => 'The animal name cannot exceed 30 characters.',
+            'description.max'      => 'The description cannot exceed 300 characters.',
+            'pet_images.max'       => 'You may upload a maximum of 5 photos per post.',
         ]);
 
-        if ($request->hasFile('pet_image')) {
-            $validated['image_path'] = $request->file('pet_image')->store('pets', 'public');
+        if ($request->hasFile('pet_images')) {
+            $paths = [];
+            foreach ($request->file('pet_images') as $file) {
+                if ($file && $file->isValid()) {
+                    $paths[] = $file->store('pets', 'public');
+                }
+            }
+            if (!empty($paths)) {
+                $validated['image_path'] = json_encode($paths);
+            }
+        } elseif ($request->hasFile('pet_image')) {
+            $validated['image_path'] = json_encode([$request->file('pet_image')->store('pets', 'public')]);
         }
 
         $validated['is_spayed_neutered'] = $request->boolean('is_spayed_neutered');
+
+        // When a draft is published (status changed from Draft to Available),
+        // reset to unverified so the admin can review and approve it before
+        // it appears on the public home feed.
+        if ($pet->status === 'Draft' && isset($validated['status']) && $validated['status'] !== 'Draft') {
+            $validated['is_verified'] = false;
+        }
 
         $pet->update($validated);
 
@@ -165,17 +251,65 @@ class PostController extends Controller
     }
 
     /**
-     * Mark a pet as Adopted.
+     * Toggle a pet's status between Adopted and Available.
+     *
+     * - If the pet is currently Adopted → revert it to Available.
+     * - Otherwise → mark it as Adopted.
+     *
+     * Only the post owner may call this action.
      */
     public function markAsAdopted(Pet $pet): RedirectResponse
     {
+        if ($pet->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        if ($pet->status === 'Adopted') {
+            // Revert: make the post active again so it reappears on the feed
+            $pet->update(['status' => 'Available']);
+
+            return back()->with('success', $pet->name . ' has been marked as Available again.');
+        }
+
+        // Forward: mark the pet as adopted
         $pet->update(['status' => 'Adopted']);
 
         return back()->with('success', $pet->name . ' has been marked as Adopted!');
     }
 
     /**
-     * Delete a pet post or saved draft.
+     * Archive an active pet post (soft delete).
+     */
+    public function archive(Pet $pet): RedirectResponse
+    {
+        if ($pet->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $pet->update(['archived_at' => now()]);
+
+        return back()->with('success', 'Post "' . $pet->name . '" has been archived and moved to Archived Posts.');
+    }
+
+    /**
+     * Restore an archived pet post back to active.
+     */
+    public function restore(Pet $pet): RedirectResponse
+    {
+        if ($pet->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $pet->update([
+            'archived_at' => null,
+            'status' => in_array($pet->status, ['Available', 'Pending', 'Adopted']) ? $pet->status : 'Available',
+        ]);
+
+        return back()->with('success', 'Post "' . $pet->name . '" has been restored to active posts.');
+    }
+
+    /**
+     * Delete a pet post permanently or saved draft.
      */
     public function destroy(Pet $pet): RedirectResponse
     {
@@ -184,18 +318,27 @@ class PostController extends Controller
         }
 
         $isDraft = (strtolower($pet->status) === 'draft');
+        $isArchived = ($pet->archived_at !== null);
         $petName = $pet->name ?: ($isDraft ? 'Draft' : 'Post');
 
-        // Delete associated pet image file if stored locally
-        if ($pet->image_path && Storage::disk('public')->exists($pet->image_path)) {
-            Storage::disk('public')->delete($pet->image_path);
+        // Delete associated pet image file(s) if stored locally
+        if ($pet->image_path) {
+            $decoded = json_decode($pet->image_path, true);
+            $pathsToDelete = is_array($decoded) ? $decoded : [$pet->image_path];
+            foreach ($pathsToDelete as $path) {
+                if ($path && Storage::disk('public')->exists($path)) {
+                    Storage::disk('public')->delete($path);
+                }
+            }
         }
 
         $pet->delete();
 
         $msg = $isDraft 
             ? 'Draft "' . $petName . '" has been deleted.' 
-            : 'Post "' . $petName . '" has been deleted successfully.';
+            : ($isArchived 
+                ? 'Post "' . $petName . '" has been permanently deleted.' 
+                : 'Post "' . $petName . '" has been deleted successfully.');
 
         return back()->with('success', $msg);
     }
@@ -207,6 +350,10 @@ class PostController extends Controller
     {
         if (!Auth::check()) {
             return redirect()->route('login')->with('error', 'Please log in to submit an adoption request.');
+        }
+
+        if (Auth::user()->status === 'blocked' || Auth::user()->is_blocked || Auth::user()->archived_at !== null) {
+            abort(403, 'Your account has been blocked or removed.');
         }
 
         $validated = $request->validate([

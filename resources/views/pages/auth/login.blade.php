@@ -25,11 +25,11 @@
                     required
                     autofocus
                     placeholder="you@example.com"
-                    class="form-control @error('email') is-invalid @enderror"
+                    class="form-control @if($errors->has('email') && !$errors->has('account_restricted')) is-invalid @endif"
                 >
-                @error('email')
-                    <span class="form-error">{{ $message }}</span>
-                @enderror
+                @if($errors->has('email') && !$errors->has('account_restricted'))
+                    <span class="form-error">{{ $errors->first('email') }}</span>
+                @endif
             </div>
 
             {{-- Password --}}

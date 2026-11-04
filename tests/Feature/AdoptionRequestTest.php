@@ -84,7 +84,7 @@ class AdoptionRequestTest extends TestCase
             'sender_id' => $adopter->id,
             'receiver_id' => $rescuer->id,
             'pet_id' => $pet->id,
-            'subject' => 'Adoption Request: yorkie',
+            'subject' => 'Adoption Request: ' . $pet->name,
         ]);
 
         // 2. Rescuer sees the incoming request in My Posts
@@ -97,7 +97,7 @@ class AdoptionRequestTest extends TestCase
         $adopterPage = $this->actingAs($adopter)->get('/my-posts');
         $adopterPage->assertStatus(200);
         $adopterPage->assertSee('My Submitted Adoption Applications (1)');
-        $adopterPage->assertSee('yorkie');
+        $adopterPage->assertSee($pet->name);
 
         // 4. Duplicate pending request is prevented
         $duplicateResponse = $this->actingAs($adopter)->post('/adoption-requests', [
@@ -130,8 +130,8 @@ class AdoptionRequestTest extends TestCase
             'sender_id'   => $rescuer->id,
             'receiver_id' => $adopter->id,
             'pet_id'      => $pet->id,
-            'subject'     => 'Adoption Request Accepted: yorkie',
-            'message'     => 'Margarette Karylle De Luna has accepted your adoption request for yorkie.',
+            'subject'     => 'Adoption Request Accepted: ' . $pet->name,
+            'message'     => 'Margarette Karylle De Luna has accepted your adoption request for ' . $pet->name . '.',
         ]);
     }
 
@@ -221,7 +221,7 @@ class AdoptionRequestTest extends TestCase
             'receiver_id' => $rescuer->id,
             'pet_id' => $pet->id,
             'subject' => 'Adoption Request Cancelled: ' . $pet->name,
-            'message' => 'Lawrence Dullo cancelled their adoption request for yorkie.',
+            'message' => 'Lawrence Dullo cancelled their adoption request for ' . $pet->name . '.',
         ]);
     }
 

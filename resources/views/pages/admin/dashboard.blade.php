@@ -8,7 +8,7 @@
     {{-- Minimal Clean Page Header --}}
     <div class="dashboard-header-block">
         <h1 class="dashboard-heading">Dashboard</h1>
-        <p class="dashboard-subheading">Overview of pets listed in Brgy. 171.</p>
+        <p class="dashboard-subheading">Overview of pets listed in Brgy. 176-F.</p>
     </div>
 
     {{-- TOP ROW: 4 Stat Cards Matching Reference Screenshot --}}
@@ -22,7 +22,7 @@
                 </span>
             </div>
             <div class="stat-big-num">{{ $postAnalytics['total'] }}</div>
-            <div class="stat-footer-pill pill-dark-brown">
+            <div class="stat-footer-pill pill-vibrant-orange">
                 +{{ $stats['posts_this_week'] ?? 0 }} this week
             </div>
         </div>
@@ -93,14 +93,14 @@
             </div>
 
             <div class="attention-items-list">
-                @if($attention['posts_to_verify'] === 0 && $attention['pending_requests'] === 0)
+                @if($attention['posts_to_verify'] === 0 && ($attention['blocked_accounts'] ?? 0) === 0)
                     {{-- Empty state --}}
                     <div class="attention-empty-state">
                         <div class="attention-empty-icon">
                             <x-lucide-check-circle style="width: 28px; height: 28px;" />
                         </div>
                         <p class="attention-empty-title">All caught up!</p>
-                        <p class="attention-empty-sub">No items need your attention right now.</p>
+                        <p class="attention-empty-sub">All posts are verified. No items need your attention right now.</p>
                     </div>
                 @else
                     {{-- Posts to verify (only show if > 0) --}}
@@ -113,21 +113,32 @@
                                 <h4 class="attention-item-title">{{ $attention['posts_to_verify'] }} post{{ $attention['posts_to_verify'] == 1 ? '' : 's' }} to verify</h4>
                                 <p class="attention-item-sub">Check the photo and location</p>
                             </div>
-                            <a href="{{ route('home') }}" class="btn-attention-action">Review</a>
+                            <a href="{{ route('admin.posts', ['verification' => 'unverified']) }}" class="btn-attention-action">Review</a>
+                        </div>
+                    @else
+                        {{-- If unverified count is 0, display "All posts are verified" and hide the Review button --}}
+                        <div class="attention-row-item">
+                            <div class="attention-icon-box" style="background-color: #DCFCE7; color: #16A34A;">
+                                <x-lucide-check-circle style="width: 17px; height: 17px;" />
+                            </div>
+                            <div class="attention-item-info">
+                                <h4 class="attention-item-title">All posts are verified</h4>
+                                <p class="attention-item-sub">No pending posts to check</p>
+                            </div>
                         </div>
                     @endif
 
-                    {{-- Adoption requests (only show if > 0) --}}
-                    @if($attention['pending_requests'] > 0)
+                    {{-- Blocked accounts (only show if > 0) --}}
+                    @if(($attention['blocked_accounts'] ?? 0) > 0)
                         <div class="attention-row-item">
-                            <div class="attention-icon-box box-yellow">
-                                <x-lucide-heart style="width: 17px; height: 17px;" />
+                            <div class="attention-icon-box box-red">
+                                <x-lucide-user-x style="width: 17px; height: 17px;" />
                             </div>
                             <div class="attention-item-info">
-                                <h4 class="attention-item-title">{{ $attention['pending_requests'] }} adoption request{{ $attention['pending_requests'] == 1 ? '' : 's' }}</h4>
-                                <p class="attention-item-sub">Waiting for the owner's reply</p>
+                                <h4 class="attention-item-title">{{ $attention['blocked_accounts'] }} blocked account{{ $attention['blocked_accounts'] == 1 ? '' : 's' }}</h4>
+                                <p class="attention-item-sub">Review suspended user accounts</p>
                             </div>
-                            <a href="{{ route('my-posts') }}" class="btn-attention-action">Open</a>
+                            <a href="{{ route('admin.accounts', ['status' => 'blocked']) }}" class="btn-attention-action">Open</a>
                         </div>
                     @endif
                 @endif
@@ -162,7 +173,7 @@
                             <x-lucide-clock style="width: 28px; height: 28px;" />
                         </div>
                         <p class="activity-empty-title">No recent activity</p>
-                        <p class="activity-empty-sub">Events will appear here once users start posting or requesting adoptions.</p>
+                        <p class="activity-empty-sub">Events will appear here once users start posting pets or registering accounts.</p>
                     </div>
                 @endforelse
             </div>

@@ -157,7 +157,7 @@
                             $colCenterX = $padLeft + ($idx * $colSlot) + ($colSlot / 2);
                             $postVal    = $pt['total_posts'];
                             $isMax      = ($postVal > 0 && $postVal >= $chartMax);
-                            $barFill    = $isMax ? '#4A2E2B' : '#E87948';
+                            $barFill    = $isMax ? '#EA580C' : '#F59E0B';
                             $postH      = $chartMax > 0 ? ($postVal / $chartMax) * $plotHeight : 0;
                             $effectiveH = $postVal > 0 ? max(16, $postH) : 0;
                             $barY       = $padTop + $plotHeight - $effectiveH;
@@ -180,7 +180,7 @@
                                       rx="8" ry="8" fill="{{ $barFill }}"
                                       class="minimal-bar-rect" />
                                 <text x="{{ $colCenterX }}" y="{{ $barY - 7 }}"
-                                      font-size="13" font-weight="800" fill="#4A2E2B"
+                                      font-size="13" font-weight="800" fill="#1F2937"
                                       font-family="'Outfit', sans-serif"
                                       text-anchor="middle">{{ $postVal }}</text>
                             @else

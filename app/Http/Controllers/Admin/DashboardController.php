@@ -20,14 +20,19 @@ class DashboardController extends Controller
     {
         abort_unless(auth()->user()->is_admin, 403, 'Unauthorized access to the Admin Portal.');
 
-        // Live database metrics for admin dashboard overview
+        // Live database metrics for admin dashboard overview (excluding archived posts)
         $stats = [
-            'total_animals'     => Pet::count(),
+            'total_animals'     => Pet::whereNull('archived_at')->count(),
             'pending_requests'  => AdoptionRequest::where('status', 'Pending')->count(),
             'approved_requests' => AdoptionRequest::where('status', 'Accepted')->count(),
-            'total_users'       => User::count(),
-            'posts_this_week'   => Pet::where('created_at', '>=', now()->subDays(7))->count(),
-            'users_this_month'  => User::where('created_at', '>=', now()->subDays(30))->count(),
+            // Active accounts: non-admin, active status, not blocked, not archived
+            'total_users'       => User::where('is_admin', false)
+                                       ->where('status', '!=', 'blocked')
+                                       ->where('is_blocked', false)
+                                       ->whereNull('archived_at')
+                                       ->count(),
+            'posts_this_week'   => Pet::whereNull('archived_at')->where('created_at', '>=', now()->subDays(7))->count(),
+            'users_this_month'  => User::where('is_admin', false)->where('created_at', '>=', now()->subDays(30))->count(),
         ];
 
         // 1. Total Posts Counter & Cats vs. Dogs Breakdown Analytics
@@ -59,12 +64,22 @@ class DashboardController extends Controller
      */
     protected function getAttentionItems(array $stats): array
     {
-        $postsToVerify   = Pet::whereIn('status', ['Pending', 'Draft', 'Under Review'])->count();
-        $pendingRequests = $stats['pending_requests'];
+        $postsToVerify   = Pet::where('is_verified', false)
+                               ->whereNull('archived_at')
+                               ->where('status', '!=', 'Draft')
+                               ->count();
+        // Blocked accounts: status = 'blocked' or is_blocked = true, not archived, not admin
+        $blockedAccounts = User::where('is_admin', false)
+                               ->where(function ($q) {
+                                   $q->where('status', 'blocked')
+                                     ->orWhere('is_blocked', true);
+                               })
+                               ->whereNull('archived_at')
+                               ->count();
 
         return [
             'posts_to_verify'  => $postsToVerify,
-            'pending_requests' => $pendingRequests,
+            'blocked_accounts' => $blockedAccounts,
         ];
     }
 
@@ -88,19 +103,7 @@ class DashboardController extends Controller
             ];
         }
 
-        // 2. Recent adoption requests
-        $recentRequests = AdoptionRequest::with('pet')->latest()->take(5)->get();
-        foreach ($recentRequests as $req) {
-            $petName = $req->pet->name ?? 'A rescue pet';
-            $activities[] = [
-                'dot'       => 'orange',
-                'title'     => $petName . ' received an adoption request',
-                'timestamp' => $this->formatTimelineTime($req->created_at),
-                'raw_time'  => $req->created_at,
-            ];
-        }
-
-        // 3. Recent non-admin user registrations
+        // 2. Recent non-admin user registrations
         $recentUsers = User::where('is_admin', false)->latest()->take(5)->get();
         foreach ($recentUsers as $user) {
             $activities[] = [
@@ -111,7 +114,7 @@ class DashboardController extends Controller
             ];
         }
 
-        // 4. Recently adopted or archived pets
+        // 3. Recently adopted or archived pets
         $archivedPets = Pet::whereIn('status', ['Adopted', 'Archived'])->latest('updated_at')->take(5)->get();
         foreach ($archivedPets as $pet) {
             $activities[] = [
@@ -142,12 +145,14 @@ class DashboardController extends Controller
 
     /**
      * Calculate Total Posts and Cats vs. Dogs breakdown metrics.
+     * Strictly excludes archived posts.
      */
     protected function calculatePostSpeciesAnalytics(): array
     {
-        $total = Pet::count();
-        $dogs = Pet::whereRaw('LOWER(TRIM(species)) IN (?, ?)', ['dog', 'dogs'])->count();
-        $cats = Pet::whereRaw('LOWER(TRIM(species)) IN (?, ?)', ['cat', 'cats'])->count();
+        $baseQuery = Pet::whereNull('archived_at');
+        $total = (clone $baseQuery)->count();
+        $dogs = (clone $baseQuery)->whereRaw('LOWER(TRIM(species)) IN (?, ?)', ['dog', 'dogs'])->count();
+        $cats = (clone $baseQuery)->whereRaw('LOWER(TRIM(species)) IN (?, ?)', ['cat', 'cats'])->count();
         $other = max(0, $total - ($dogs + $cats));
 
         $dogPercent = $total > 0 ? round(($dogs / $total) * 100, 1) : 0;
@@ -155,10 +160,10 @@ class DashboardController extends Controller
         $otherPercent = $total > 0 ? round(($other / $total) * 100, 1) : 0;
 
         $statusCounts = [
-            'available' => Pet::whereRaw('LOWER(status) = ?', ['available'])->count(),
-            'adopted'   => Pet::whereRaw('LOWER(status) = ?', ['adopted'])->count(),
-            'pending'   => Pet::whereRaw('LOWER(status) = ?', ['pending'])->count(),
-            'archived'  => Pet::whereRaw('LOWER(status) in (?, ?)', ['archived', 'pending'])->count(),
+            'available' => (clone $baseQuery)->whereRaw('LOWER(status) = ?', ['available'])->count(),
+            'adopted'   => (clone $baseQuery)->whereRaw('LOWER(status) = ?', ['adopted'])->count(),
+            'pending'   => (clone $baseQuery)->whereRaw('LOWER(status) = ?', ['pending'])->count(),
+            'archived'  => Pet::whereNotNull('archived_at')->count(),
         ];
 
         return [
@@ -227,8 +232,9 @@ class DashboardController extends Controller
 
         $daysCount = max(1, (int)$startDate->diffInDays($endDate) + 1);
 
-        // Retrieve pets created in range
-        $pets = Pet::whereBetween('created_at', [$startDate, $endDate])
+        // Retrieve pets created in range (excluding archived posts)
+        $pets = Pet::whereNull('archived_at')
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->get(['id', 'user_id', 'created_at']);
 
         $totalPeriodPosts = $pets->count();

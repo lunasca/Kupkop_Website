@@ -1,5 +1,5 @@
 {{-- ==========================================================================
-     AUTHENTICATION MODALS (LOGIN & SIGN UP)
+     AUTHENTICATION MODALS (LOGIN, SIGN UP & ACCOUNT RESTRICTION)
      Rendered globally in layouts/app.blade.php
    ========================================================================== --}}
 
@@ -46,11 +46,11 @@
                             value="{{ old('email') }}"
                             required
                             placeholder="you@example.com"
-                            class="form-control @error('email') is-invalid @enderror"
+                            class="form-control @if($errors->has('email') && !$errors->has('account_restricted')) is-invalid @endif"
                         >
-                        @error('email')
-                            <span class="form-error">{{ $message }}</span>
-                        @enderror
+                        @if($errors->has('email') && !$errors->has('account_restricted'))
+                            <span class="form-error">{{ $errors->first('email') }}</span>
+                        @endif
                     </div>
 
                     {{-- Password --}}
@@ -232,10 +232,99 @@
         </div>
     </div>
 
+    {{-- 3. DEDICATED STANDALONE ACCOUNT ACCESS RESTRICTED MODAL --}}
+    @php
+        $isRestricted = $errors->has('account_restricted') || session('is_account_restricted') || session('account_blocked');
+        $restTitle   = session('restriction_title') ?? ($errors->first('account_restricted') && str_contains(strtolower($errors->first('account_restricted')), 'suspend') ? 'Account Suspended' : 'Account Access Restricted');
+        $restMessage = session('restriction_message') ?? ($errors->first('account_restricted') ?: 'Your account has been blocked by the Barangay Kupkop Administrator.');
+        $restReason  = session('block_reason') ?? 'Violation of community adoption guidelines';
+    @endphp
+    <div 
+        id="account-restricted-modal" 
+        class="modal-backdrop auth-modal-backdrop" 
+        role="dialog" 
+        aria-modal="true" 
+        aria-labelledby="restricted-modal-title"
+        style="{{ $isRestricted ? 'display: flex;' : 'display: none;' }} z-index: 1080;"
+        onclick="handleAuthBackdropClick(event, 'account-restricted-modal')"
+    >
+        <div class="modal-dialog auth-modal-dialog" onclick="event.stopPropagation()" style="max-width: 460px;">
+            {{-- Close Button --}}
+            <button 
+                type="button" 
+                class="modal-close-btn" 
+                onclick="closeRestrictedModal()" 
+                aria-label="Close modal"
+            >
+                <x-lucide-x class="modal-close-icon" />
+            </button>
+
+            <div class="auth-card-modal" style="padding: 2.25rem 2rem; border-top: 5px solid #DC2626; border-radius: 1.25rem;">
+                {{-- Icon & Header --}}
+                <div style="text-align: center; margin-bottom: 1.25rem;">
+                    <div style="width: 56px; height: 56px; border-radius: 50%; background: #FEE2E2; color: #DC2626; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 0.85rem; box-shadow: 0 0 0 6px #FEF2F2;">
+                        <x-lucide-shield-alert style="width: 30px; height: 30px; stroke-width: 2.2;" />
+                    </div>
+                    <h2 id="restricted-modal-title" style="font-size: 1.35rem; font-weight: 800; color: #991B1B; margin: 0 0 0.35rem 0; letter-spacing: -0.3px;">
+                        {{ $restTitle }}
+                    </h2>
+                    <span style="display: inline-block; font-size: 0.72rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; background: #FEE2E2; color: #991B1B; padding: 2px 10px; border-radius: 999px;">
+                        Barangay Kupkop Security Notice
+                    </span>
+                </div>
+
+                {{-- Message --}}
+                <p style="font-size: 0.94rem; color: #4A2E2B; margin: 0 0 1.15rem 0; line-height: 1.55; text-align: center; font-weight: 500;">
+                    {{ $restMessage }}
+                </p>
+
+                {{-- Reason Box --}}
+                <div style="background: #FEF2F2; border-left: 4px solid #DC2626; border-radius: 0 0.65rem 0.65rem 0; padding: 0.85rem 1.1rem; margin-bottom: 1.25rem;">
+                    <div style="font-size: 0.76rem; font-weight: 800; text-transform: uppercase; color: #7F1D1D; letter-spacing: 0.4px; margin-bottom: 0.25rem;">
+                        Reason Provided by Admin
+                    </div>
+                    <div style="font-size: 0.92rem; color: #991B1B; font-weight: 600; line-height: 1.45;">
+                        {{ $restReason }}
+                    </div>
+                </div>
+
+                {{-- Support Box --}}
+                <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 0.75rem; padding: 0.85rem 1rem; margin-bottom: 1.65rem; font-size: 0.84rem; color: #78350F; line-height: 1.5;">
+                    <strong style="color: #92400E; display: block; margin-bottom: 0.2rem;">Barangay 176-F Support</strong>
+                    For appeals, account review, or inquiries, please contact the Barangay 176-F administration at <strong>support@kupkop.local</strong> or visit the Barangay 176-F Animal Welfare Desk.
+                </div>
+
+                {{-- Action Buttons: Back to Login & Close --}}
+                <div style="display: flex; gap: 0.75rem; justify-content: stretch;">
+                    <button
+                        type="button"
+                        onclick="backToLoginFromRestricted()"
+                        style="flex: 1; padding: 0.75rem 1rem; border: none; background: #4A2E2B; color: #ffffff; border-radius: 0.75rem; font-size: 0.95rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.4rem; transition: background 0.15s ease;"
+                        onmouseover="this.style.background='#361F1D'"
+                        onmouseout="this.style.background='#4A2E2B'"
+                    >
+                        <x-lucide-arrow-left style="width: 17px; height: 17px; stroke-width: 2.2;" />
+                        <span>Back to Login</span>
+                    </button>
+                    <button
+                        type="button"
+                        onclick="closeRestrictedModal()"
+                        style="padding: 0.75rem 1.25rem; border: 1.5px solid #E5E7EB; background: #FAF9F6; color: #71655B; border-radius: 0.75rem; font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.15s ease;"
+                        onmouseover="this.style.background='#F3F4F6'"
+                        onmouseout="this.style.background='#FAF9F6'"
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Auth Modals JavaScript Controller --}}
     <script>
         function openLoginModal() {
             closeRegisterModal();
+            closeRestrictedModal();
             const modal = document.getElementById('login-modal');
             if (modal) {
                 modal.style.display = 'flex';
@@ -251,14 +340,13 @@
             const modal = document.getElementById('login-modal');
             if (modal) {
                 modal.style.display = 'none';
-                if (!document.getElementById('register-modal') || document.getElementById('register-modal').style.display === 'none') {
-                    document.body.classList.remove('modal-open');
-                }
+                updateBodyModalState();
             }
         }
 
         function openRegisterModal() {
             closeLoginModal();
+            closeRestrictedModal();
             const modal = document.getElementById('register-modal');
             if (modal) {
                 modal.style.display = 'flex';
@@ -274,9 +362,47 @@
             const modal = document.getElementById('register-modal');
             if (modal) {
                 modal.style.display = 'none';
-                if (!document.getElementById('login-modal') || document.getElementById('login-modal').style.display === 'none') {
-                    document.body.classList.remove('modal-open');
-                }
+                updateBodyModalState();
+            }
+        }
+
+        function openRestrictedModal() {
+            closeLoginModal();
+            closeRegisterModal();
+            const modal = document.getElementById('account-restricted-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                document.body.classList.add('modal-open');
+            }
+        }
+
+        function closeRestrictedModal() {
+            const modal = document.getElementById('account-restricted-modal');
+            if (modal) {
+                modal.style.display = 'none';
+                updateBodyModalState();
+            }
+        }
+
+        function backToLoginFromRestricted() {
+            closeRestrictedModal();
+            const pageEmail = document.getElementById('email');
+            if (pageEmail) {
+                pageEmail.focus();
+            } else {
+                openLoginModal();
+            }
+        }
+
+        function updateBodyModalState() {
+            const login = document.getElementById('login-modal');
+            const reg = document.getElementById('register-modal');
+            const rest = document.getElementById('account-restricted-modal');
+            const isAnyOpen = (login && login.style.display === 'flex') ||
+                              (reg && reg.style.display === 'flex') ||
+                              (rest && rest.style.display === 'flex');
+            if (!isAnyOpen) {
+                document.body.classList.remove('modal-open');
             }
         }
 
@@ -294,6 +420,7 @@
             if (event.target.id === modalId) {
                 if (modalId === 'login-modal') closeLoginModal();
                 if (modalId === 'register-modal') closeRegisterModal();
+                if (modalId === 'account-restricted-modal') closeRestrictedModal();
             }
         }
 
@@ -302,11 +429,18 @@
             if (event.key === 'Escape') {
                 closeLoginModal();
                 closeRegisterModal();
+                closeRestrictedModal();
             }
         });
 
-        // Auto-reopen appropriate modal on validation error
-        @if(old('auth_action') === 'register' || $errors->has('name') || $errors->has('password_confirmation'))
+        // Auto-reopen appropriate modal on validation error / restriction
+        @if($errors->has('account_restricted') || session('is_account_restricted') || session('account_blocked'))
+            document.addEventListener('DOMContentLoaded', function() {
+                closeLoginModal();
+                closeRegisterModal();
+                openRestrictedModal();
+            });
+        @elseif(old('auth_action') === 'register' || $errors->has('name') || $errors->has('password_confirmation'))
             document.addEventListener('DOMContentLoaded', function() {
                 openRegisterModal();
             });

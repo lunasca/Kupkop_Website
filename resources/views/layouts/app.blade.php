@@ -19,36 +19,14 @@
     @stack('styles')
 </head>
 <body class="site-body {{ request()->routeIs('home') ? 'page-home' : '' }} {{ request()->routeIs('messages') ? 'page-messages' : '' }} {{ !auth()->check() ? 'is-guest' : 'is-auth' }}">
-    {{-- Global top progress bar & centered loading indicator --}}
+    {{-- Global top progress bar --}}
     <div id="kup-progress-bar"></div>
-    <div id="kup-global-loader" class="kup-global-loader" aria-hidden="true">
-        <div class="kup-loader-card">
-            <div class="kup-loader-spinner-wrapper">
-                <div class="kup-loader-ring"></div>
-                <span class="kup-loader-icon">🐾</span>
-            </div>
-            <span class="kup-loader-message" id="kup-loader-message">Loading...</span>
-        </div>
-    </div>
 
     {{-- Reusable Navigation Bar Component --}}
     <x-navbar />
 
     {{-- Main Page Content --}}
     <main class="main-content">
-        {{-- Flash Banners: only shown after login or sign-up --}}
-        @if(session('auth_success') || session('auth_error'))
-            <div class="site-container alert-container">
-                @if(session('auth_success'))
-                    <x-alert type="success" :message="session('auth_success')" />
-                @endif
-
-                @if(session('auth_error'))
-                    <x-alert type="error" :message="session('auth_error')" />
-                @endif
-            </div>
-        @endif
-
         @yield('content')
     </main>
 
@@ -69,6 +47,66 @@
 
     <!-- Base Script -->
     <script src="{{ asset('js/app.js') }}?v={{ filemtime(public_path('js/app.js')) }}"></script>
+
+    {{-- Global background polling: keeps the unread-message badge live on every page --}}
+    @auth
+        @if(!Auth::user()->is_admin)
+        <script>
+        (function () {
+            'use strict';
+            const POLL_INTERVAL = 8000; // 8 s — slower than in-page poll to reduce server load
+            let globalPollTimer = null;
+
+            function updateNavBadge(count) {
+                const badge = document.getElementById('navMsgBadge');
+                const badgeMobile = document.getElementById('navMsgBadgeMobile');
+                [badge, badgeMobile].forEach(el => {
+                    if (!el) return;
+                    if (count > 0) {
+                        el.textContent = count > 99 ? '99+' : count;
+                        el.style.display = 'flex';
+                        el.setAttribute('data-count', count);
+                    } else {
+                        el.style.display = 'none';
+                        el.setAttribute('data-count', '0');
+                    }
+                });
+            }
+
+            async function globalPollUnread() {
+                try {
+                    const res = await fetch('/messages/unread', {
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    if (typeof data.unread_total !== 'undefined') {
+                        updateNavBadge(data.unread_total);
+                        // Allow the messages page to hook into global poll updates
+                        if (typeof window.kupGlobalUnreadUpdate === 'function') {
+                            window.kupGlobalUnreadUpdate(data.unread_total, data.unreads_by_sender || {});
+                        }
+                    }
+                } catch (e) {
+                    // Silent — network errors are expected during navigation / offline states
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                globalPollTimer = setInterval(globalPollUnread, POLL_INTERVAL);
+            });
+
+            window.addEventListener('beforeunload', function () {
+                if (globalPollTimer) clearInterval(globalPollTimer);
+            });
+        })();
+        </script>
+        @endif
+    @endauth
+
     @stack('scripts')
 </body>
 </html>

@@ -46,6 +46,6 @@ class RegisterController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->intended(route('home'))->with('auth_success', 'Account created successfully! Welcome to Kupkop, ' . $user->name . '.');
+        return redirect()->intended(route('home'));
     }
 }

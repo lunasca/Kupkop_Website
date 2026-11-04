@@ -22,16 +22,19 @@
 
         {{-- Search Bar --}}
         @auth
-            <div class="msg-search-wrap">
+            <div class="msg-search-wrap" style="position: relative;">
                 <x-lucide-search class="msg-search-icon" />
                 <input
                     type="text"
                     id="convSearch"
                     class="msg-search-input"
                     placeholder="Search conversations..."
-                    oninput="filterConversations(this.value)"
+                    oninput="handleConvSearchInput(this.value)"
+                    onfocus="handleConvSearchInput(this.value)"
                     autocomplete="off"
                 />
+                {{-- Floating Dropdown Suggestions --}}
+                <div id="msgSearchDropdown" class="msg-search-dropdown" style="display: none;"></div>
             </div>
 
             {{-- Conversation Items --}}
@@ -98,6 +101,30 @@
                 </div>
 
                 <div class="msg-chat-header-badge" id="chatHeaderBadge"></div>
+
+                {{-- Conversation Options Menu --}}
+                <div class="msg-chat-header-actions" id="chatHeaderActions">
+                    <div class="msg-header-dropdown-wrap" id="headerDropdownWrap">
+                        <button type="button" class="msg-header-action-btn" id="btnConvMenu" onclick="toggleConvMenu(event)" aria-label="Conversation options" title="Conversation options">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="1.5"></circle>
+                                <circle cx="12" cy="5" r="1.5"></circle>
+                                <circle cx="12" cy="19" r="1.5"></circle>
+                            </svg>
+                        </button>
+                        <div class="msg-header-dropdown-menu" id="convDropdownMenu" style="display: none;">
+                            <button type="button" class="msg-dropdown-item text-danger" onclick="openDeleteConversationModal()">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                                <span>Delete Conversation</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {{-- Chat History --}}
@@ -122,6 +149,73 @@
                     </button>
                 </div>
                 <p class="msg-footer-hint">Press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to send</p>
+            </div>
+        </div>
+
+        {{-- ======================================================
+             MODALS — Delete Message & Delete Conversation
+        ====================================================== --}}
+        {{-- Delete Message Confirmation Modal --}}
+        <div class="modal-backdrop" id="deleteMessageModal" style="display: none;" onclick="closeModalOnBackdrop(event, 'deleteMessageModal')">
+            <div class="modal-dialog msg-action-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="delMsgModalTitle">
+                <div class="msg-modal-header">
+                    <div class="msg-modal-icon-wrap danger">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <h3 class="msg-modal-title" id="delMsgModalTitle">Delete Message</h3>
+                        <p class="msg-modal-desc">Choose how you want to delete this message.</p>
+                    </div>
+                    <button type="button" class="msg-modal-close" onclick="closeDeleteMessageModal()" aria-label="Close">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <div class="msg-modal-body">
+                    <p class="msg-preview-quote" id="delMsgPreview"></p>
+                </div>
+                <div class="msg-modal-footer">
+                    <button type="button" class="btn-msg-modal-cancel" onclick="closeDeleteMessageModal()">Cancel</button>
+                    <button type="button" class="btn-msg-modal-secondary" onclick="confirmDeleteMessage('for_me')">Delete for Me</button>
+                    <button type="button" class="btn-msg-modal-danger" onclick="confirmDeleteMessage('for_everyone')">Delete for Everyone</button>
+                </div>
+            </div>
+        </div>
+
+        {{-- Delete Conversation Confirmation Modal --}}
+        <div class="modal-backdrop" id="deleteConversationModal" style="display: none;" onclick="closeModalOnBackdrop(event, 'deleteConversationModal')">
+            <div class="modal-dialog msg-action-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="delConvModalTitle">
+                <div class="msg-modal-header">
+                    <div class="msg-modal-icon-wrap danger">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </div>
+                    <div style="flex: 1; min-width: 0;">
+                        <h3 class="msg-modal-title" id="delConvModalTitle">Delete Conversation</h3>
+                        <p class="msg-modal-desc">This action will hide the conversation thread.</p>
+                    </div>
+                    <button type="button" class="msg-modal-close" onclick="closeDeleteConversationModal()" aria-label="Close">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <div class="msg-modal-body">
+                    <p id="delConvMessage" style="margin: 0; line-height: 1.5; color: #4A2E2B;">Are you sure you want to delete this conversation? This will hide/remove all messages in this thread.</p>
+                </div>
+                <div class="msg-modal-footer">
+                    <button type="button" class="btn-msg-modal-cancel" onclick="closeDeleteConversationModal()">Cancel</button>
+                    <button type="button" class="btn-msg-modal-danger" id="btnConfirmDelConv" onclick="confirmDeleteConversation()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        <span>Delete Conversation</span>
+                    </button>
+                </div>
             </div>
         </div>
         @endauth
@@ -149,6 +243,10 @@ let activeId = @json($activePartnerId ?? null);
 const targetPet = @json($targetPet ?? '');
 const targetRecipient = @json($targetRecipient ?? '');
 const csrfToken = '{{ csrf_token() }}';
+
+let editingMessageId = null;
+let deletingMessageId = null;
+let targetDeleteConvId = null;
 
 // ── Helpers ────────────────────────────────────────────────
 function formatHumanTime(dateInput) {
@@ -243,6 +341,7 @@ function updateUnreadBadges(count) {
 function renderSidebar(filter = '') {
     const list = document.getElementById('convList');
     if (!list) return;
+    const prevScroll = list.scrollTop;
 
     const lc = filter.toLowerCase();
     const filtered = conversations.filter(c =>
@@ -281,12 +380,17 @@ function renderSidebar(filter = '') {
                 <div class="msg-conv-preview">${escapeHTML(c.lastMsg || 'No messages yet')}</div>
             </div>
             ${c.unread > 0 ? `<span class="msg-unread-badge">${c.unread}</span>` : ''}
+            <button type="button" class="msg-conv-delete-btn" onclick="openDeleteConversationModal(${c.id}, event)" title="Delete conversation" aria-label="Delete conversation">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            </button>
         </li>
     `).join('');
+
+    list.scrollTop = prevScroll;
 }
 
 // ── Render Chat History ────────────────────────────────────
-function renderChat(conv) {
+function renderChat(conv, autoScroll = true) {
     const history = document.getElementById('chatHistory');
     if (!history) return;
 
@@ -352,31 +456,82 @@ function renderChat(conv) {
         }
 
         const displayTime = m.time || (m.created_at ? formatHumanTime(m.created_at) : '');
+        const editedTag = m.edited_at ? `<span class="msg-edited-label" title="Edited at ${escapeHTML(formatHumanTime(m.edited_at))}">(edited)</span>` : '';
+
+        // If this message is currently being edited
+        const isEditing = (editingMessageId === m.id);
+
+        let bubbleHtml = '';
+        if (m.deleted_for_everyone) {
+            bubbleHtml = `
+                <div class="msg-bubble msg-bubble-deleted">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                    <span>This message was deleted</span>
+                </div>
+            `;
+        } else if (isEditing) {
+            bubbleHtml = `
+                <div class="msg-inline-edit" id="inlineEdit-${m.id}">
+                    <textarea
+                        id="editInput-${m.id}"
+                        class="msg-inline-edit-input"
+                        rows="1"
+                        placeholder="Edit message..."
+                        oninput="autoResizeInlineEdit(this)"
+                        onkeydown="handleEditKeydown(event, ${m.id})"
+                    >${escapeHTML(m.text)}</textarea>
+                    <div class="msg-inline-edit-actions">
+                        <button type="button" class="btn-edit-cancel" onclick="cancelEditMessage(${m.id})">Cancel</button>
+                        <button type="button" class="btn-edit-save" onclick="saveEditMessage(${m.id})">Save</button>
+                    </div>
+                </div>
+            `;
+        } else {
+            const actionsHtml = (m.mine && !m.deleted_for_everyone) ? `
+                <div class="msg-bubble-actions">
+                    <button type="button" class="msg-action-btn" onclick="startEditMessage(${m.id})" title="Edit message" aria-label="Edit message">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    </button>
+                    <button type="button" class="msg-action-btn text-danger" onclick="openDeleteMessageModal(${m.id})" title="Delete message" aria-label="Delete message">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
+                </div>
+            ` : '';
+
+            bubbleHtml = `
+                <div class="msg-bubble-content-wrap">
+                    <div class="msg-bubble ${m.mine ? 'msg-bubble-sent' : 'msg-bubble-received'}">
+                        ${escapeHTML(m.text)}
+                    </div>
+                    ${actionsHtml}
+                </div>
+            `;
+        }
 
         return `
-            <div class="msg-bubble-row ${m.mine ? 'mine' : 'theirs'}">
+            <div class="msg-bubble-row ${m.mine ? 'mine' : 'theirs'}" id="msgRow-${m.id}">
                 ${!m.mine ? `<div class="msg-bubble-avatar" style="background:${m.color || conv.color}">${m.initials || conv.initials}</div>` : ''}
                 <div class="msg-bubble-wrap">
                     <div class="msg-bubble-meta">
                         ${m.mine ? `
                             ${statusIndicator}
-                            <span class="msg-bubble-time">${escapeHTML(displayTime)} •</span>
+                            <span class="msg-bubble-time">${escapeHTML(displayTime)}${editedTag} •</span>
                             <span class="msg-bubble-sender">You</span>
                         ` : `
                             <span class="msg-bubble-sender">${escapeHTML(m.sender || conv.name)}</span>
-                            <span class="msg-bubble-time">• ${escapeHTML(displayTime)}</span>
+                            <span class="msg-bubble-time">• ${escapeHTML(displayTime)}${editedTag}</span>
                         `}
                     </div>
-                    <div class="msg-bubble ${m.mine ? 'msg-bubble-sent' : 'msg-bubble-received'}">
-                        ${escapeHTML(m.text)}
-                    </div>
+                    ${bubbleHtml}
                 </div>
                 ${m.mine ? `<div class="msg-bubble-avatar" style="background:#4A2E2B">${ME.initials}</div>` : ''}
             </div>
         `;
     }).join('');
 
-    scrollToBottom();
+    if (autoScroll) {
+        scrollToBottom();
+    }
 }
 
 function scrollToBottom(smooth = false) {
@@ -394,6 +549,7 @@ function scrollToBottom(smooth = false) {
 // ── Select Conversation ────────────────────────────────────
 async function selectConversation(id) {
     activeId = id;
+    editingMessageId = null;
     const conv = conversations.find(c => c.id === id);
     if (!conv) return;
 
@@ -441,6 +597,7 @@ async function selectConversation(id) {
 
 function deselectConversation() {
     activeId = null;
+    editingMessageId = null;
     const sidebar = document.getElementById('msgSidebar');
     if (sidebar) sidebar.classList.remove('mobile-hidden');
 
@@ -471,14 +628,16 @@ async function sendMessage() {
     isSending = true;
     const nowTime = timeNow();
     const tempMsg = {
-        sender:     ME.name,
-        initials:   ME.initials,
-        color:      '#4A2E2B',
-        text:       text,
-        time:       nowTime,
-        mine:       true,
-        is_read:    false,
-        created_at: new Date().toISOString()
+        sender:               ME.name,
+        initials:             ME.initials,
+        color:                '#4A2E2B',
+        text:                 text,
+        time:                 nowTime,
+        mine:                 true,
+        is_read:              false,
+        created_at:           new Date().toISOString(),
+        deleted_for_everyone: false,
+        edited_at:            null
     };
 
     if (!conv.messages) conv.messages = [];
@@ -549,6 +708,367 @@ function filterConversations(val) {
     renderSidebar(val);
 }
 
+// ── Search Suggestions Dropdown ────────────────────────────
+function handleConvSearchInput(val) {
+    renderSidebar(val);
+    renderSearchDropdown(val);
+}
+
+function renderSearchDropdown(val) {
+    const dropdown = document.getElementById('msgSearchDropdown');
+    if (!dropdown) return;
+
+    const term = (val || '').trim().toLowerCase();
+    if (!term) {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+        return;
+    }
+
+    const matches = [];
+    conversations.forEach(c => {
+        const nameMatch = (c.name || '').toLowerCase().includes(term);
+        const subjectMatch = (c.subject || '').toLowerCase().includes(term);
+        const lastMsgMatch = (c.lastMsg || '').toLowerCase().includes(term);
+
+        // Check if any specific message in conversation matches
+        let matchingSnippet = '';
+        if (c.messages && c.messages.length > 0) {
+            for (let i = c.messages.length - 1; i >= 0; i--) {
+                const text = c.messages[i].text || '';
+                if (text.toLowerCase().includes(term)) {
+                    matchingSnippet = text;
+                    break;
+                }
+            }
+        }
+        if (!matchingSnippet && lastMsgMatch) {
+            matchingSnippet = c.lastMsg;
+        }
+
+        if (nameMatch || subjectMatch || lastMsgMatch || matchingSnippet) {
+            matches.push({
+                conv: c,
+                snippet: matchingSnippet || c.lastMsg || c.subject || 'Conversation'
+            });
+        }
+    });
+
+    if (matches.length === 0) {
+        dropdown.innerHTML = `
+            <div class="msg-dropdown-empty">
+                <span>No matching conversations found</span>
+            </div>
+        `;
+        dropdown.style.display = 'block';
+        return;
+    }
+
+    dropdown.innerHTML = matches.slice(0, 6).map(item => {
+        const c = item.conv;
+        return `
+            <div class="msg-dropdown-item" onclick="selectFromDropdown(${c.id})">
+                <div class="msg-dropdown-avatar" style="background:${c.color}">${c.initials}</div>
+                <div class="msg-dropdown-text">
+                    <div class="msg-dropdown-name">${escapeHTML(c.name)}</div>
+                    <div class="msg-dropdown-sub">${escapeHTML(c.subject || 'Adoption Inquiry')}</div>
+                    <div class="msg-dropdown-snippet">${escapeHTML(item.snippet)}</div>
+                </div>
+                ${c.unread > 0 ? `<span class="msg-unread-badge" style="font-size:0.7rem;padding:2px 6px;">${c.unread}</span>` : ''}
+            </div>
+        `;
+    }).join('');
+
+    dropdown.style.display = 'block';
+}
+
+function selectFromDropdown(id) {
+    const dropdown = document.getElementById('msgSearchDropdown');
+    if (dropdown) {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+    }
+    const searchInput = document.getElementById('convSearch');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    renderSidebar('');
+    selectConversation(id);
+}
+
+// Close search dropdown when clicking outside
+document.addEventListener('click', function(e) {
+    const wrap = document.querySelector('.msg-search-wrap');
+    const dropdown = document.getElementById('msgSearchDropdown');
+    if (dropdown && wrap && !wrap.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
+// ── Message Edit Logic ─────────────────────────────────────
+function autoResizeInlineEdit(el) {
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+}
+
+function startEditMessage(id) {
+    editingMessageId = id;
+    const conv = conversations.find(c => c.id === activeId);
+    if (!conv) return;
+    renderChat(conv, false);
+
+    const textarea = document.getElementById(`editInput-${id}`);
+    if (textarea) {
+        autoResizeInlineEdit(textarea);
+        textarea.focus();
+        const len = textarea.value.length;
+        textarea.setSelectionRange(len, len);
+    }
+}
+
+function cancelEditMessage(id) {
+    editingMessageId = null;
+    const conv = conversations.find(c => c.id === activeId);
+    if (conv) renderChat(conv);
+}
+
+function handleEditKeydown(e, id) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        saveEditMessage(id);
+    } else if (e.key === 'Escape') {
+        e.preventDefault();
+        cancelEditMessage(id);
+    }
+}
+
+async function saveEditMessage(id) {
+    const input = document.getElementById(`editInput-${id}`);
+    if (!input) return;
+    const newText = input.value.trim();
+    if (!newText) {
+        alert('Message content cannot be empty.');
+        return;
+    }
+
+    const conv = conversations.find(c => c.id === activeId);
+    if (!conv) return;
+    const msg = (conv.messages || []).find(m => m.id === id);
+    if (!msg) return;
+
+    if (newText === msg.text) {
+        cancelEditMessage(id);
+        return;
+    }
+
+    try {
+        const res = await fetch(`/messages/${id}/edit`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ message: newText })
+        });
+
+        const data = await res.json();
+        if (data && data.success) {
+            msg.text = data.text;
+            msg.edited_at = data.edited_at;
+
+            // Update conversation last message preview if this was the latest message
+            const lastM = conv.messages[conv.messages.length - 1];
+            if (lastM && lastM.id === id) {
+                conv.lastMsg = data.text;
+                renderSidebar(document.getElementById('convSearch')?.value || '');
+            }
+
+            editingMessageId = null;
+            renderChat(conv);
+        } else if (data && data.error) {
+            alert(data.error);
+        }
+    } catch (err) {
+        console.error('Failed to edit message:', err);
+        alert('Could not update message. Please check your connection and try again.');
+    }
+}
+
+// ── Message Delete Logic ───────────────────────────────────
+function openDeleteMessageModal(id) {
+    const conv = conversations.find(c => c.id === activeId);
+    if (!conv) return;
+    const msg = (conv.messages || []).find(m => m.id === id);
+    if (!msg) return;
+
+    deletingMessageId = id;
+    const previewEl = document.getElementById('delMsgPreview');
+    if (previewEl) {
+        previewEl.textContent = msg.text;
+    }
+
+    const modal = document.getElementById('deleteMessageModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeDeleteMessageModal() {
+    deletingMessageId = null;
+    const modal = document.getElementById('deleteMessageModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function confirmDeleteMessage(mode) {
+    if (!deletingMessageId) return;
+    const id = deletingMessageId;
+    const conv = conversations.find(c => c.id === activeId);
+    if (!conv) return;
+
+    try {
+        const res = await fetch(`/messages/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ mode: mode })
+        });
+
+        const data = await res.json();
+        if (data && data.success) {
+            closeDeleteMessageModal();
+
+            if (mode === 'for_everyone') {
+                const msg = (conv.messages || []).find(m => m.id === id);
+                if (msg) {
+                    msg.deleted_for_everyone = true;
+                    msg.text = 'This message was deleted';
+                }
+            } else {
+                // Delete for Me: remove from conv.messages
+                conv.messages = (conv.messages || []).filter(m => m.id !== id);
+            }
+
+            // Update conversation last message preview
+            if (conv.messages.length > 0) {
+                const last = conv.messages[conv.messages.length - 1];
+                conv.lastMsg = last.deleted_for_everyone ? 'This message was deleted' : last.text;
+                conv.time = last.time || (last.created_at ? formatHumanTime(last.created_at) : '');
+            } else {
+                conv.lastMsg = 'No messages yet';
+            }
+
+            renderChat(conv);
+            renderSidebar(document.getElementById('convSearch')?.value || '');
+        } else if (data && data.error) {
+            alert(data.error);
+        }
+    } catch (err) {
+        console.error('Failed to delete message:', err);
+        alert('Could not delete message. Please try again.');
+    }
+}
+
+// ── Conversation Options & Delete Logic ─────────────────────
+function toggleConvMenu(e) {
+    e.stopPropagation();
+    const menu = document.getElementById('convDropdownMenu');
+    if (!menu) return;
+    menu.style.display = (menu.style.display === 'none' || menu.style.display === '') ? 'flex' : 'none';
+}
+
+function openDeleteConversationModal(partnerId = null, event = null) {
+    if (event) event.stopPropagation();
+
+    // Close header dropdown if open
+    const menu = document.getElementById('convDropdownMenu');
+    if (menu) menu.style.display = 'none';
+
+    targetDeleteConvId = partnerId !== null ? partnerId : activeId;
+    if (!targetDeleteConvId) return;
+
+    const conv = conversations.find(c => c.id === targetDeleteConvId);
+    const convName = conv ? conv.name : 'this user';
+
+    const msgEl = document.getElementById('delConvMessage');
+    if (msgEl) {
+        msgEl.innerHTML = `Are you sure you want to delete this conversation with <strong>${escapeHTML(convName)}</strong>? This will hide/remove all messages in this thread.`;
+    }
+
+    const modal = document.getElementById('deleteConversationModal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeDeleteConversationModal() {
+    targetDeleteConvId = null;
+    const modal = document.getElementById('deleteConversationModal');
+    if (modal) modal.style.display = 'none';
+}
+
+async function confirmDeleteConversation() {
+    if (!targetDeleteConvId) return;
+    const partnerId = targetDeleteConvId;
+
+    try {
+        const res = await fetch(`/messages/${partnerId}/conversation`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            }
+        });
+
+        const data = await res.json();
+        if (data && data.success) {
+            closeDeleteConversationModal();
+
+            // Remove from local conversations list
+            const idx = conversations.findIndex(c => c.id === partnerId);
+            if (idx !== -1) {
+                conversations.splice(idx, 1);
+            }
+
+            // If the deleted conversation was currently active, switch or deselect
+            if (activeId === partnerId) {
+                if (conversations.length > 0) {
+                    selectConversation(conversations[0].id);
+                } else {
+                    deselectConversation();
+                }
+            } else {
+                renderSidebar(document.getElementById('convSearch')?.value || '');
+            }
+
+            updateUnreadBadges();
+        } else if (data && data.error) {
+            alert(data.error);
+        }
+    } catch (err) {
+        console.error('Failed to delete conversation:', err);
+        alert('Could not delete conversation. Please try again.');
+    }
+}
+
+function closeModalOnBackdrop(e, modalId) {
+    if (e.target.id === modalId) {
+        if (modalId === 'deleteMessageModal') closeDeleteMessageModal();
+        if (modalId === 'deleteConversationModal') closeDeleteConversationModal();
+    }
+}
+
+// ── Global Event Listeners ─────────────────────────────────
+document.addEventListener('click', (e) => {
+    const wrap = document.getElementById('headerDropdownWrap');
+    const menu = document.getElementById('convDropdownMenu');
+    if (menu && menu.style.display !== 'none') {
+        if (!wrap || !wrap.contains(e.target)) {
+            menu.style.display = 'none';
+        }
+    }
+});
+
 // ── Real-time Thread Polling ───────────────────────────────
 async function pollThread() {
     if (!activeId) return;
@@ -564,12 +1084,16 @@ async function pollThread() {
         const prevLen = (conv.messages || []).length;
         const newLen = (data.messages || []).length;
 
-        // Check if messages changed or read receipts updated
+        // Check if messages changed, edited, deleted, or read receipts updated
         let changed = (newLen !== prevLen);
         if (!changed && newLen > 0) {
-            // Check if any message's read status updated
             for (let idx = 0; idx < newLen; idx++) {
-                if (Boolean(conv.messages[idx]?.is_read) !== Boolean(data.messages[idx]?.is_read)) {
+                if (
+                    Boolean(conv.messages[idx]?.is_read) !== Boolean(data.messages[idx]?.is_read) ||
+                    conv.messages[idx]?.text !== data.messages[idx]?.text ||
+                    Boolean(conv.messages[idx]?.deleted_for_everyone) !== Boolean(data.messages[idx]?.deleted_for_everyone) ||
+                    conv.messages[idx]?.edited_at !== data.messages[idx]?.edited_at
+                ) {
                     changed = true;
                     break;
                 }
@@ -577,16 +1101,28 @@ async function pollThread() {
         }
 
         if (changed) {
+            // If user is currently editing, don't overwrite if they are on an active input
+            const activeEdit = editingMessageId;
             conv.messages = data.messages;
             if (newLen > 0) {
                 // In ascending chronological order, latest message is at index newLen - 1
                 const latest = data.messages[newLen - 1];
-                conv.lastMsg = latest.text;
+                conv.lastMsg = latest.deleted_for_everyone ? 'This message was deleted' : latest.text;
                 conv.time = latest.time;
             }
 
-            renderChat(conv);
-            scrollToBottom(true);
+            const historyEl = document.getElementById('chatHistory');
+            const wasNearBottom = historyEl ? (historyEl.scrollHeight - historyEl.scrollTop - historyEl.clientHeight < 120) : true;
+            const prevScrollTop = historyEl ? historyEl.scrollTop : 0;
+
+            if (!activeEdit) {
+                renderChat(conv, false);
+                if (wasNearBottom) {
+                    scrollToBottom(true);
+                } else if (historyEl) {
+                    historyEl.scrollTop = prevScrollTop;
+                }
+            }
             sortToTop(activeId);
             renderSidebar(document.getElementById('convSearch')?.value || '');
 
@@ -636,6 +1172,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Live sync polling every 3.5 seconds
     setInterval(pollThread, 3500);
+
+    // Expose hook so the global layout poller (app.blade.php, every 8 s) can
+    // feed unread counts into the messages page without losing the user's scroll position.
+    window.kupGlobalUnreadUpdate = function (total, unreadsBySender = {}) {
+        updateUnreadBadges(total);
+        if (unreadsBySender && typeof unreadsBySender === 'object') {
+            let sidebarNeedsUpdate = false;
+            conversations.forEach(c => {
+                if (c.id !== activeId) {
+                    const newUnread = unreadsBySender[c.id] || 0;
+                    if (c.unread !== newUnread) {
+                        c.unread = newUnread;
+                        sidebarNeedsUpdate = true;
+                    }
+                }
+            });
+            if (sidebarNeedsUpdate) {
+                renderSidebar(document.getElementById('convSearch')?.value || '');
+            }
+        }
+    };
 });
 </script>
 @endpush

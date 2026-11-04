@@ -7,28 +7,59 @@
 <section class="hero-section">
     <div class="site-container hero-content">
         @auth
-            {{-- Auth greeting: above the card, left-aligned --}}
-            <div class="hero-auth-greeting">
-                <h1 class="hero-greeting-title">Welcome, {{ Auth::user()->name }}!</h1>
-                <p class="hero-greeting-sub">Meet rescued aspins, puspins, and pets ready for adoption in Brgy.&nbsp;176&#8209;F.</p>
+            {{-- Auth greeting horizontally aligned with right-side "+" Create Post button (users) or summary stat counters (admin) --}}
+            <div class="hero-welcome-row">
+                <div class="hero-auth-greeting">
+                    <h1 class="page-title hero-greeting-title">Welcome, {{ Auth::user()->name }}!</h1>
+                    <p class="page-subtitle hero-greeting-sub">Meet rescued aspins, puspins, and pets ready for adoption in Brgy.&nbsp;176&#8209;F.</p>
+                </div>
+                @if(Auth::user()->is_admin)
+                    <div class="hero-admin-stats-widget" role="region" aria-label="Shelter Summary Stats">
+                        <div class="admin-stat-card">
+                            <span class="admin-stat-number">{{ $adminStats['total_listed'] ?? 0 }}</span>
+                            <span class="admin-stat-label">Pets listed</span>
+                        </div>
+                        <div class="admin-stat-card">
+                            <span class="admin-stat-number">{{ $adminStats['available'] ?? 0 }}</span>
+                            <span class="admin-stat-label">Available</span>
+                        </div>
+                        <div class="admin-stat-card">
+                            <span class="admin-stat-number">{{ $adminStats['pending'] ?? 0 }}</span>
+                            <span class="admin-stat-label">Pending</span>
+                        </div>
+                    </div>
+                @else
+                    <button 
+                        type="button" 
+                        class="btn-hero-create-post" 
+                        onclick="openCreatePostModal()" 
+                        title="Create Post" 
+                        aria-label="Create Post"
+                    >
+                        <x-lucide-plus class="hero-create-icon" />
+                    </button>
+                @endif
             </div>
         @else
             {{-- Guest greeting: same layout above the card, left-aligned --}}
             <div class="hero-auth-greeting">
-                <h1 class="hero-greeting-title">Adopt a rescued dog or cat in <span class="text-nowrap">Brgy.&nbsp;176&#8209;F.</span></h1>
-                <p class="hero-greeting-sub">Connecting rescued pets with loving homes in Brgy.&nbsp;176&#8209;F.</p>
+                <h1 class="page-title hero-greeting-title">Adopt a rescued dog or cat in <span class="text-nowrap">Brgy.&nbsp;176&#8209;F.</span></h1>
+                <p class="page-subtitle hero-greeting-sub">Connecting rescued pets with loving homes in Brgy.&nbsp;176&#8209;F.</p>
             </div>
         @endauth
 
         {{-- 2. Search & Filter Bar --}}
         <div class="search-filter-card">
             <form action="{{ route('home') }}" method="GET" class="filter-form" id="filter-form">
+                <input type="hidden" name="status" id="filter-status-input" value="{{ request('status', 'all') }}">
+
                 {{-- Search Input with Search Icon --}}
                 <div class="filter-group search-input-group">
                     <x-lucide-search class="filter-icon" />
                     <input 
                         type="text" 
                         name="keyword" 
+                        id="home-search-input"
                         value="{{ request('keyword') }}" 
                         placeholder="Search by name or breed"
                         autocomplete="off"
@@ -37,18 +68,18 @@
                 </div>
 
                 {{-- Species Dropdown --}}
-                <div class="filter-group custom-select-group" data-filter="species" data-prefix="Species: ">
+                <div class="filter-group custom-select-group" data-filter="species">
                     <input type="hidden" name="species" value="{{ request('species') }}">
                     <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">
                         <span class="custom-select-label">
-                            Species: {{ request('species') ? ucfirst(request('species')) : 'All' }}
+                            {{ request('species') ? ucfirst(request('species')) : 'All species' }}
                         </span>
                         <x-lucide-chevron-down class="custom-select-arrow" />
                     </button>
                     <ul class="custom-select-dropdown" role="listbox">
-                        <li class="custom-select-option {{ !request('species') ? 'selected' : '' }}" data-value="" data-label="All">
+                        <li class="custom-select-option {{ !request('species') ? 'selected' : '' }}" data-value="" data-label="All species">
                             <x-lucide-check class="option-check-icon" />
-                            <span>All</span>
+                            <span>All species</span>
                         </li>
                         <li class="custom-select-option {{ request('species') == 'dog' ? 'selected' : '' }}" data-value="dog" data-label="Dog">
                             <x-lucide-check class="option-check-icon" />
@@ -62,22 +93,23 @@
                 </div>
 
                 {{-- Breed Dropdown --}}
-                <div class="filter-group custom-select-group" data-filter="breed" data-prefix="Breed: ">
+                <div class="filter-group custom-select-group" data-filter="breed">
                     <input type="hidden" name="breed" value="{{ request('breed') }}">
                     <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">
                         <span class="custom-select-label">
-                            @if(request('breed') == 'aspin') Breed: Aspin
-                            @elseif(request('breed') == 'puspin') Breed: Puspin
-                            @elseif(request('breed') == 'mix') Breed: Mix Breed
-                            @else Breed: Any
+                            @if(request('breed') == 'aspin') Aspin
+                            @elseif(request('breed') == 'puspin') Puspin
+                            @elseif(request('breed') == 'mix') Mix Breed
+                            @elseif(request('breed')) {{ ucfirst(request('breed')) }}
+                            @else Any breed
                             @endif
                         </span>
                         <x-lucide-chevron-down class="custom-select-arrow" />
                     </button>
                     <ul class="custom-select-dropdown" role="listbox">
-                        <li class="custom-select-option {{ !request('breed') ? 'selected' : '' }}" data-value="" data-label="Any">
+                        <li class="custom-select-option {{ !request('breed') ? 'selected' : '' }}" data-value="" data-label="Any breed">
                             <x-lucide-check class="option-check-icon" />
-                            <span>Any</span>
+                            <span>Any breed</span>
                         </li>
                         <li class="custom-select-option {{ request('breed') == 'aspin' ? 'selected' : '' }}" data-value="aspin" data-label="Aspin">
                             <x-lucide-check class="option-check-icon" />
@@ -95,51 +127,56 @@
                 </div>
 
                 {{-- Age Dropdown --}}
-                <div class="filter-group custom-select-group" data-filter="age" data-prefix="Age: ">
+                <div class="filter-group custom-select-group" data-filter="age">
                     <input type="hidden" name="age" value="{{ request('age') }}">
                     <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">
                         <span class="custom-select-label">
-                            @if(request('age') == 'puppy_kitten') Age: Puppy / Kitten (&lt; 1 yr)
-                            @elseif(request('age') == 'young') Age: Young (1 - 2 yrs)
-                            @elseif(request('age') == 'adult') Age: Adult (2+ yrs)
-                            @else Age: Any
+                            @if(request('age') == 'puppy_kitten') Puppy / Kitten (0 - 6 months)
+                            @elseif(request('age') == 'junior' || request('age') == 'young') Junior (7 - 12 months)
+                            @elseif(request('age') == 'adult') Adult (1 - 7 years)
+                            @elseif(request('age') == 'senior') Senior (8+ years)
+                            @else Any age
                             @endif
                         </span>
                         <x-lucide-chevron-down class="custom-select-arrow" />
                     </button>
                     <ul class="custom-select-dropdown" role="listbox">
-                        <li class="custom-select-option {{ !request('age') ? 'selected' : '' }}" data-value="" data-label="Any">
+                        <li class="custom-select-option {{ !request('age') ? 'selected' : '' }}" data-value="" data-label="Any age">
                             <x-lucide-check class="option-check-icon" />
-                            <span>Any</span>
+                            <span>Any age</span>
                         </li>
-                        <li class="custom-select-option {{ request('age') == 'puppy_kitten' ? 'selected' : '' }}" data-value="puppy_kitten" data-label="Puppy / Kitten (&lt; 1 yr)">
+                        <li class="custom-select-option {{ request('age') == 'puppy_kitten' ? 'selected' : '' }}" data-value="puppy_kitten" data-label="Puppy / Kitten (0 - 6 months)">
                             <x-lucide-check class="option-check-icon" />
-                            <span>Puppy / Kitten (&lt; 1 yr)</span>
+                            <span>Puppy / Kitten (0 - 6 months)</span>
                         </li>
-                        <li class="custom-select-option {{ request('age') == 'young' ? 'selected' : '' }}" data-value="young" data-label="Young (1 - 2 yrs)">
+                        <li class="custom-select-option {{ (request('age') == 'junior' || request('age') == 'young') ? 'selected' : '' }}" data-value="junior" data-label="Junior (7 - 12 months)">
                             <x-lucide-check class="option-check-icon" />
-                            <span>Young (1 - 2 yrs)</span>
+                            <span>Junior (7 - 12 months)</span>
                         </li>
-                        <li class="custom-select-option {{ request('age') == 'adult' ? 'selected' : '' }}" data-value="adult" data-label="Adult (2+ yrs)">
+                        <li class="custom-select-option {{ request('age') == 'adult' ? 'selected' : '' }}" data-value="adult" data-label="Adult (1 - 7 years)">
                             <x-lucide-check class="option-check-icon" />
-                            <span>Adult (2+ yrs)</span>
+                            <span>Adult (1 - 7 years)</span>
+                        </li>
+                        <li class="custom-select-option {{ request('age') == 'senior' ? 'selected' : '' }}" data-value="senior" data-label="Senior (8+ years)">
+                            <x-lucide-check class="option-check-icon" />
+                            <span>Senior (8+ years)</span>
                         </li>
                     </ul>
                 </div>
 
                 {{-- Gender Dropdown --}}
-                <div class="filter-group custom-select-group" data-filter="gender" data-prefix="Gender: ">
+                <div class="filter-group custom-select-group" data-filter="gender">
                     <input type="hidden" name="gender" value="{{ request('gender') }}">
                     <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">
                         <span class="custom-select-label">
-                            Gender: {{ request('gender') ? ucfirst(request('gender')) : 'All' }}
+                            {{ request('gender') ? ucfirst(request('gender')) : 'All genders' }}
                         </span>
                         <x-lucide-chevron-down class="custom-select-arrow" />
                     </button>
                     <ul class="custom-select-dropdown" role="listbox">
-                        <li class="custom-select-option {{ !request('gender') ? 'selected' : '' }}" data-value="" data-label="All">
+                        <li class="custom-select-option {{ !request('gender') ? 'selected' : '' }}" data-value="" data-label="All genders">
                             <x-lucide-check class="option-check-icon" />
-                            <span>All</span>
+                            <span>All genders</span>
                         </li>
                         <li class="custom-select-option {{ request('gender') == 'male' ? 'selected' : '' }}" data-value="male" data-label="Male">
                             <x-lucide-check class="option-check-icon" />
@@ -152,80 +189,63 @@
                     </ul>
                 </div>
 
-                {{-- Status Dropdown --}}
-                <div class="filter-group custom-select-group" data-filter="status" data-prefix="Status: ">
-                    <input type="hidden" name="status" value="{{ request('status', 'available') }}">
-                    <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">
-                        <span class="custom-select-label">
-                            @if(request('status') == 'pending') Status: Pending
-                            @elseif(request('status') == 'all') Status: All
-                            @else Status: Available
-                            @endif
-                        </span>
-                        <x-lucide-chevron-down class="custom-select-arrow" />
-                    </button>
-                    <ul class="custom-select-dropdown" role="listbox">
-                        <li class="custom-select-option {{ request('status', 'available') == 'available' ? 'selected' : '' }}" data-value="available" data-label="Available">
-                            <x-lucide-check class="option-check-icon" />
-                            <span>Available</span>
-                        </li>
-                        <li class="custom-select-option {{ request('status') == 'pending' ? 'selected' : '' }}" data-value="pending" data-label="Pending">
-                            <x-lucide-check class="option-check-icon" />
-                            <span>Pending</span>
-                        </li>
-                        <li class="custom-select-option {{ request('status') == 'all' ? 'selected' : '' }}" data-value="all" data-label="All Statuses">
-                            <x-lucide-check class="option-check-icon" />
-                            <span>All Statuses</span>
-                        </li>
-                    </ul>
+                {{-- Reset Button --}}
+                <div class="filter-action">
+                    <a href="{{ route('home') }}" class="btn-filter-reset-link" title="Reset all filters">
+                        <x-lucide-rotate-ccw style="width: 14px; height: 14px;" />
+                        <span>Reset</span>
+                    </a>
                 </div>
-
-                {{-- Reset Button if any filter is active --}}
-                @if(request()->hasAny(['keyword', 'species', 'breed', 'age', 'gender']) || (request('status') && request('status') !== 'available'))
-                    <div class="filter-action">
-                        <a href="{{ route('home') }}" class="btn-filter-reset" title="Reset all filters" aria-label="Reset all filters">
-                            <x-lucide-rotate-ccw class="btn-reset-icon" />
-                        </a>
-                    </div>
-                @endif
             </form>
+        </div>
+
+        {{-- Status Filter Pills & Count --}}
+        <div class="status-pills-row">
+            <div class="status-pills-group" role="tablist" aria-label="Status filter">
+                @php $currStatus = strtolower(request('status', 'all')); @endphp
+                <button type="button" class="home-status-pill {{ $currStatus === 'all' ? 'active' : '' }}" onclick="setHomeStatus('all')">
+                    <span>All</span>
+                    <span class="home-status-badge">{{ $statusCounts['all'] ?? $pets->count() }}</span>
+                </button>
+                <button type="button" class="home-status-pill {{ $currStatus === 'available' ? 'active' : '' }}" onclick="setHomeStatus('available')">
+                    <span>Available</span>
+                    <span class="home-status-badge">{{ $statusCounts['available'] ?? 0 }}</span>
+                </button>
+                <button type="button" class="home-status-pill {{ $currStatus === 'pending' ? 'active' : '' }}" onclick="setHomeStatus('pending')">
+                    <span>Pending</span>
+                    <span class="home-status-badge">{{ $statusCounts['pending'] ?? 0 }}</span>
+                </button>
+                <button type="button" class="home-status-pill {{ $currStatus === 'verified' ? 'active' : '' }}" onclick="setHomeStatus('verified')">
+                    <span>Verified</span>
+                    <span class="home-status-badge">{{ $statusCounts['verified'] ?? 0 }}</span>
+                </button>
+            </div>
+            <div class="status-pills-meta">
+                Showing {{ $pets->count() }} pet{{ $pets->count() == 1 ? '' : 's' }}
+            </div>
         </div>
     </div>
 </section>
 
-{{-- 3. Recently Listed Pets Section (Dynamic Feed from Database) --}}
+{{-- 3. Pets Feed Section (Dynamic Feed from Database) --}}
 <section class="pets-section" id="pets">
     <div class="site-container">
-        {{-- White Card Circling Recently Listed Pets --}}
-        <div class="pets-container-card">
-            {{-- Section Header with Pet Count --}}
-            <div class="section-header">
-                <h2 class="section-title">
-                    Recently Listed Pets <span class="pets-count-badge">({{ $pets->count() }} Available)</span>
-                </h2>
-            </div>
-
-            {{-- Dedicated Scroll Area for Pet Cards --}}
-            <div class="pets-scroll-area">
-                {{-- 4-Column Grid for Pet Cards --}}
-                <div class="pets-grid">
-                    @forelse($pets as $pet)
-                        <x-pet-card :pet="$pet" />
-                    @empty
-                        <div class="empty-feed-card">
-                            <span class="empty-icon">
-                                <x-lucide-search-x class="empty-lucide-icon" />
-                            </span>
-                            <h3>No pets found matching your criteria</h3>
-                            <p class="text-muted">Try clearing the search filters or check back soon for newly rescued barangay animals.</p>
-                            <a href="{{ route('home') }}" class="btn-filter-yellow mt-2">
-                                <x-lucide-rotate-ccw class="btn-reset-icon" />
-                                <span>Clear Filters</span>
-                            </a>
-                        </div>
-                    @endforelse
+        <div class="pets-grid">
+            @forelse($pets as $pet)
+                <x-pet-card :pet="$pet" />
+            @empty
+                <div class="empty-feed-card">
+                    <span class="empty-icon">
+                        <x-lucide-search-x class="empty-lucide-icon" />
+                    </span>
+                    <h3>No pets found matching your criteria</h3>
+                    <p class="text-muted">Try clearing the search filters or check back soon for newly rescued barangay animals.</p>
+                    <a href="{{ route('home') }}" class="btn-filter-yellow mt-2">
+                        <x-lucide-rotate-ccw class="btn-reset-icon" />
+                        <span>Clear Filters</span>
+                    </a>
                 </div>
-            </div>
+            @endforelse
         </div>
     </div>
 </section>
@@ -260,6 +280,10 @@
                 <div class="pet-header-title-row">
                     <h2 id="modal-pet-name" class="pet-modal-title">Pet Name</h2>
                     <span id="modal-status-badge" class="badge-modal-status status-available">Available</span>
+                    <span id="modal-verified-badge" class="poster-verified-badge" style="display: none; padding: 0.2rem 0.65rem; font-size: 0.78rem;">
+                        <span class="verified-check-circle" aria-hidden="true">✓</span>
+                        <span>Verified</span>
+                    </span>
                 </div>
                 <p class="pet-modal-subtitle">
                     <x-lucide-map-pin style="width: 14px; height: 14px; stroke-width: 2.2; color: #D97706; flex-shrink: 0;" />
@@ -273,9 +297,13 @@
             {{-- Left Column: Larger Clickable Photo & Rescuer Card --}}
             <div class="pet-details-col-left">
                 <div class="form-section pet-photo-section">
-                    <label class="form-label font-bold">1. Animal Photo</label>
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.35rem;">
+                        <label class="form-label font-bold" style="margin-bottom: 0;">1. Animal Photo</label>
+                        <span id="modal-photo-counter" class="modal-photo-counter-badge" style="display: none;">1 / 1</span>
+                    </div>
                     <div 
                         class="pet-photo-frame" 
+                        style="position: relative;"
                         onclick="openFullscreenImage()" 
                         title="Click to view full screen" 
                         role="button" 
@@ -283,11 +311,39 @@
                         onkeydown="if(event.key==='Enter'||event.key===' '){openFullscreenImage();event.preventDefault();}"
                     >
                         <img id="modal-pet-image" src="" alt="Pet Photo" class="pet-frame-image">
+                        
+                        {{-- Cycle Arrows (visible when pet has multiple photos) --}}
+                        <button 
+                            type="button" 
+                            id="modal-gallery-prev" 
+                            class="modal-gallery-arrow-btn prev" 
+                            onclick="event.stopPropagation(); cycleModalGallery(-1);" 
+                            style="display: none;"
+                            aria-label="Previous photo"
+                            title="Previous photo"
+                        >
+                            &#10094;
+                        </button>
+                        <button 
+                            type="button" 
+                            id="modal-gallery-next" 
+                            class="modal-gallery-arrow-btn next" 
+                            onclick="event.stopPropagation(); cycleModalGallery(1);" 
+                            style="display: none;"
+                            aria-label="Next photo"
+                            title="Next photo"
+                        >
+                            &#10095;
+                        </button>
+
                         <div class="photo-expand-badge">
                             <x-lucide-maximize-2 class="expand-badge-icon" />
                             <span>View Full Screen</span>
                         </div>
                     </div>
+
+                    {{-- Dynamic Thumbnail Strip for Multi-Image Gallery --}}
+                    <div id="modal-gallery-thumbnails" class="modal-gallery-thumbnails-strip" style="display: none;"></div>
                     
                     <div class="pet-rescuer-card">
                         <div class="rescuer-icon-badge">
@@ -295,7 +351,13 @@
                         </div>
                         <div class="rescuer-text-group">
                             <span class="rescuer-sublabel">Rescued &amp; Posted By</span>
-                            <strong id="modal-spec-posted" class="rescuer-name">Rescuer Name</strong>
+                            <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                                <strong id="modal-spec-posted" class="rescuer-name">Rescuer Name</strong>
+                                <span id="modal-rescuer-verified" class="poster-verified-badge" style="display: none; padding: 0.1rem 0.5rem; font-size: 0.72rem;">
+                                    <span class="verified-check-circle" aria-hidden="true">✓</span>
+                                    <span>Verified</span>
+                                </span>
+                            </div>
                         </div>
                         <span class="rescuer-tag" id="modal-rescuer-id">#RES-0492</span>
                     </div>
@@ -406,32 +468,71 @@
     </div>
 </div>
 
-{{-- 4b. Fullscreen Pet Image Viewer Modal --}}
+{{-- 4b. Fullscreen Pet Image Carousel Viewer Modal --}}
 <div 
     id="pet-fullscreen-image-modal" 
-    class="fullscreen-image-backdrop" 
+    class="fullscreen-carousel-backdrop" 
     style="display: none;" 
     role="dialog" 
     aria-modal="true" 
-    aria-label="Full screen pet image"
-    onclick="closeFullscreenImage()"
+    aria-label="Full screen pet image carousel"
+    onclick="handleFullscreenBackdropClick(event)"
 >
-    {{-- Pinned Close Button --}}
-    <button 
-        type="button" 
-        class="fullscreen-close-btn" 
-        onclick="event.stopPropagation(); closeFullscreenImage();" 
-        aria-label="Close full screen view"
-    >
-        <x-lucide-x class="fullscreen-close-icon" />
-    </button>
+    {{-- Header Bar (Pet Name, Counter, Close Button) --}}
+    <div class="fullscreen-carousel-header" onclick="event.stopPropagation()">
+        <div class="fs-carousel-meta-info">
+            <h3 id="fs-carousel-pet-name" class="fs-carousel-title">Pet Name</h3>
+            <span id="fs-carousel-counter" class="fs-carousel-counter-badge">1 / 1</span>
+        </div>
+        <button 
+            type="button" 
+            class="fullscreen-close-btn" 
+            onclick="closeFullscreenImage()" 
+            aria-label="Close full screen view"
+            title="Close (Esc)"
+        >
+            <x-lucide-x class="fullscreen-close-icon" />
+        </button>
+    </div>
 
-    {{-- Image Container --}}
-    <div class="fullscreen-image-container" onclick="event.stopPropagation()">
-        <img id="pet-fullscreen-img" src="" alt="Full screen pet photo" class="fullscreen-img">
-        <div class="fullscreen-image-bar">
-            <span id="pet-fullscreen-caption" class="fullscreen-caption"></span>
-            <span class="fullscreen-hint">Click anywhere or press ESC to exit</span>
+    {{-- Main Carousel Viewport with Smooth Previous/Next Navigation Arrows --}}
+    <div class="fullscreen-carousel-viewport" onclick="event.stopPropagation()">
+        {{-- Previous Arrow Button --}}
+        <button 
+            type="button" 
+            id="fs-carousel-prev-btn" 
+            class="fs-carousel-nav-btn fs-prev-btn" 
+            onclick="cycleFullscreenCarousel(-1)" 
+            aria-label="Previous photo"
+            title="Previous photo (Left arrow key)"
+        >
+            &#10094;
+        </button>
+
+        {{-- Centered Image Stage --}}
+        <div class="fs-carousel-slide-box">
+            <img id="pet-fullscreen-img" src="" alt="Full screen pet photo" class="fullscreen-img fs-carousel-img">
+        </div>
+
+        {{-- Next Arrow Button --}}
+        <button 
+            type="button" 
+            id="fs-carousel-next-btn" 
+            class="fs-carousel-nav-btn fs-next-btn" 
+            onclick="cycleFullscreenCarousel(1)" 
+            aria-label="Next photo"
+            title="Next photo (Right arrow key)"
+        >
+            &#10095;
+        </button>
+    </div>
+
+    {{-- Bottom Thumbnail Indicators Strip & Keyboard Hints --}}
+    <div class="fullscreen-carousel-footer" onclick="event.stopPropagation()">
+        <div id="fs-carousel-thumbnails-strip" class="fs-carousel-thumbnails-strip"></div>
+        <div class="fullscreen-image-bar" style="justify-content: center;">
+            <span id="pet-fullscreen-caption" class="fullscreen-caption" style="display: none;"></span>
+            <span class="fullscreen-hint">Use <strong>&larr; &rarr;</strong> arrow keys to browse &bull; Press <strong>ESC</strong> to exit</span>
         </div>
     </div>
 </div>
@@ -608,6 +709,9 @@
 </div>
 @endauth
 
+{{-- 6. Create Post Modal (Post a Rescued Animal for Adoption) --}}
+<x-create-post-modal />
+
 {{-- Pass Dynamic Pet Data into JavaScript --}}
 @php
     // Pre-load current user's pending request pet IDs for efficient lookup
@@ -640,9 +744,11 @@
             'description' => $p->description,
             'story' => $p->description,
             'image' => $p->image_url,
+            'images' => $p->image_urls,
             'user_id' => $p->user_id,
             'is_own_post' => Auth::check() && ($p->user_id === Auth::id()),
             'has_pending_request' => in_array($p->id, $myPendingPetIds),
+            'is_verified' => (bool) (($p->is_verified ?? false) || ($p->user?->is_verified ?? false)),
         ];
     });
 @endphp
@@ -652,12 +758,15 @@
     const kupkopPetsData = @json($petsJson);
     let activePetRecord = null;
     let activeGallery = [];
+    let activeGalleryIndex = 0;
 
     function openPetModal(petId) {
         const pet = kupkopPetsData.find(p => p.id === petId);
         if (!pet) return;
 
         activePetRecord = pet;
+        activeGallery = (pet.images && pet.images.length > 0) ? pet.images : [pet.image];
+        activeGalleryIndex = 0;
 
         // Populate Header
         document.getElementById('modal-pet-name').textContent = pet.name;
@@ -676,9 +785,18 @@
             }
         }
 
-        // Left Column: Image & Rescuer
-        document.getElementById('modal-pet-image').src = pet.image;
-        document.getElementById('modal-pet-image').alt = pet.name;
+        // Verified badges
+        const modalVerifiedBadge = document.getElementById('modal-verified-badge');
+        if (modalVerifiedBadge) {
+            modalVerifiedBadge.style.display = pet.is_verified ? 'inline-flex' : 'none';
+        }
+        const modalRescuerVerified = document.getElementById('modal-rescuer-verified');
+        if (modalRescuerVerified) {
+            modalRescuerVerified.style.display = pet.is_verified ? 'inline-flex' : 'none';
+        }
+
+        // Left Column: Image Gallery & Rescuer
+        renderModalGallery();
         const rescuerIdEl = document.getElementById('modal-rescuer-id');
         if (rescuerIdEl) {
             rescuerIdEl.textContent = pet.rescuer_id || '#RES-0492';
@@ -748,15 +866,72 @@
         document.body.classList.add('modal-open');
     }
 
-    function swapMainImage(index) {
-        if (!activeGallery || !activeGallery[index]) return;
-        document.getElementById('modal-pet-image').src = activeGallery[index];
-        for (let i = 0; i < 3; i++) {
-            const thumb = document.getElementById('modal-thumb-' + i);
-            if (thumb && thumb.parentElement) {
-                thumb.parentElement.classList.toggle('active', i === index);
+    function renderModalGallery() {
+        if (!activeGallery || activeGallery.length === 0) return;
+        const mainImg = document.getElementById('modal-pet-image');
+        if (mainImg) {
+            mainImg.src = activeGallery[activeGalleryIndex];
+            mainImg.alt = activePetRecord ? activePetRecord.name : 'Pet Photo';
+        }
+
+        const counter = document.getElementById('modal-photo-counter');
+        const prevBtn = document.getElementById('modal-gallery-prev');
+        const nextBtn = document.getElementById('modal-gallery-next');
+        const thumbsContainer = document.getElementById('modal-gallery-thumbnails');
+
+        const total = activeGallery.length;
+        if (counter) {
+            if (total > 1) {
+                counter.textContent = (activeGalleryIndex + 1) + ' / ' + total;
+                counter.style.display = 'inline-block';
+            } else {
+                counter.style.display = 'none';
             }
         }
+
+        if (prevBtn) prevBtn.style.display = total > 1 ? 'flex' : 'none';
+        if (nextBtn) nextBtn.style.display = total > 1 ? 'flex' : 'none';
+
+        if (thumbsContainer) {
+            if (total > 1) {
+                thumbsContainer.innerHTML = '';
+                activeGallery.forEach(function(url, idx) {
+                    const thumb = document.createElement('button');
+                    thumb.type = 'button';
+                    thumb.className = 'modal-gallery-thumb' + (idx === activeGalleryIndex ? ' active' : '');
+                    thumb.setAttribute('aria-label', 'View photo ' + (idx + 1));
+                    thumb.onclick = function() {
+                        swapModalGalleryImage(idx);
+                    };
+
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = 'Thumbnail ' + (idx + 1);
+                    thumb.appendChild(img);
+                    thumbsContainer.appendChild(thumb);
+                });
+                thumbsContainer.style.display = 'flex';
+            } else {
+                thumbsContainer.style.display = 'none';
+                thumbsContainer.innerHTML = '';
+            }
+        }
+    }
+
+    function swapModalGalleryImage(index) {
+        if (!activeGallery || !activeGallery[index]) return;
+        activeGalleryIndex = index;
+        renderModalGallery();
+    }
+
+    function cycleModalGallery(direction) {
+        if (!activeGallery || activeGallery.length <= 1) return;
+        activeGalleryIndex = (activeGalleryIndex + direction + activeGallery.length) % activeGallery.length;
+        renderModalGallery();
+    }
+
+    function swapMainImage(index) {
+        swapModalGalleryImage(index);
     }
 
     function closePetModal() {
@@ -768,24 +943,98 @@
         }
     }
 
-    function openFullscreenImage() {
-        const mainImg = document.getElementById('modal-pet-image');
-        if (!mainImg || !mainImg.src) return;
+    function openFullscreenImage(optionalIndex = null) {
+        if (!activeGallery || activeGallery.length === 0) return;
+        if (optionalIndex !== null && typeof optionalIndex === 'number' && activeGallery[optionalIndex]) {
+            activeGalleryIndex = optionalIndex;
+        }
+
         const fsModal = document.getElementById('pet-fullscreen-image-modal');
-        const fsImg = document.getElementById('pet-fullscreen-img');
-        const fsCaption = document.getElementById('pet-fullscreen-caption');
         const petNameEl = document.getElementById('modal-pet-name');
-        
-        if (fsImg) {
-            fsImg.src = mainImg.src;
-            fsImg.alt = (petNameEl ? petNameEl.textContent : 'Pet') + ' - Fullscreen';
+        const fsPetName = document.getElementById('fs-carousel-pet-name');
+        if (fsPetName) {
+            fsPetName.textContent = activePetRecord ? activePetRecord.name : (petNameEl ? petNameEl.textContent : 'Pet Photo');
         }
-        if (fsCaption && petNameEl) {
-            fsCaption.textContent = petNameEl.textContent;
-        }
+
+        renderFullscreenCarouselSlide();
+
         if (fsModal) {
             fsModal.style.display = 'flex';
         }
+    }
+
+    function renderFullscreenCarouselSlide() {
+        if (!activeGallery || activeGallery.length === 0) return;
+        const currentSrc = activeGallery[activeGalleryIndex];
+        const fsImg = document.getElementById('pet-fullscreen-img');
+        const fsCounter = document.getElementById('fs-carousel-counter');
+        const prevBtn = document.getElementById('fs-carousel-prev-btn');
+        const nextBtn = document.getElementById('fs-carousel-next-btn');
+        const thumbsStrip = document.getElementById('fs-carousel-thumbnails-strip');
+        const total = activeGallery.length;
+
+        if (fsImg && currentSrc) {
+            fsImg.classList.remove('fade-in');
+            // Trigger browser reflow to restart fade animation
+            void fsImg.offsetWidth;
+            fsImg.src = currentSrc;
+            fsImg.alt = (activePetRecord ? activePetRecord.name : 'Pet') + ' - Photo ' + (activeGalleryIndex + 1);
+            fsImg.classList.add('fade-in');
+        }
+
+        if (fsCounter) {
+            if (total > 1) {
+                fsCounter.textContent = (activeGalleryIndex + 1) + ' / ' + total;
+                fsCounter.style.display = 'inline-block';
+            } else {
+                fsCounter.textContent = '1 / 1';
+                fsCounter.style.display = 'inline-block';
+            }
+        }
+
+        if (prevBtn) prevBtn.style.display = total > 1 ? 'flex' : 'none';
+        if (nextBtn) nextBtn.style.display = total > 1 ? 'flex' : 'none';
+
+        if (thumbsStrip) {
+            if (total > 1) {
+                thumbsStrip.innerHTML = '';
+                activeGallery.forEach(function(url, idx) {
+                    const thumbBtn = document.createElement('button');
+                    thumbBtn.type = 'button';
+                    thumbBtn.className = 'fs-thumb-pill' + (idx === activeGalleryIndex ? ' is-active' : '');
+                    thumbBtn.setAttribute('aria-label', 'View photo ' + (idx + 1));
+                    thumbBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        setFullscreenCarouselSlide(idx);
+                    };
+
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.alt = 'Thumbnail ' + (idx + 1);
+                    thumbBtn.appendChild(img);
+                    thumbsStrip.appendChild(thumbBtn);
+                });
+                thumbsStrip.style.display = 'flex';
+            } else {
+                thumbsStrip.style.display = 'none';
+                thumbsStrip.innerHTML = '';
+            }
+        }
+
+        // Keep Pet Details modal gallery synchronized in background
+        renderModalGallery();
+    }
+
+    function cycleFullscreenCarousel(direction) {
+        if (!activeGallery || activeGallery.length <= 1) return;
+        activeGalleryIndex = (activeGalleryIndex + direction + activeGallery.length) % activeGallery.length;
+        renderFullscreenCarouselSlide();
+    }
+
+    function setFullscreenCarouselSlide(index) {
+        if (!activeGallery || !activeGallery[index]) return;
+        activeGalleryIndex = index;
+        renderFullscreenCarouselSlide();
     }
 
     function closeFullscreenImage() {
@@ -795,19 +1044,63 @@
         }
     }
 
+    function handleFullscreenBackdropClick(event) {
+        if (event.target.id === 'pet-fullscreen-image-modal') {
+            closeFullscreenImage();
+        }
+    }
+
     function handleBackdropClick(event) {
         if (event.target.id === 'pet-details-modal') {
             closePetModal();
         }
     }
 
+    // Touch swipe navigation for mobile
+    let fsTouchStartX = 0;
+    let fsTouchEndX = 0;
+    const fsCarouselModal = document.getElementById('pet-fullscreen-image-modal');
+    if (fsCarouselModal) {
+        fsCarouselModal.addEventListener('touchstart', function(e) {
+            fsTouchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        fsCarouselModal.addEventListener('touchend', function(e) {
+            fsTouchEndX = e.changedTouches[0].screenX;
+            const diff = fsTouchStartX - fsTouchEndX;
+            if (Math.abs(diff) > 40) {
+                if (diff > 0) {
+                    cycleFullscreenCarousel(1); // Swipe left -> Next
+                } else {
+                    cycleFullscreenCarousel(-1); // Swipe right -> Prev
+                }
+            }
+        }, { passive: true });
+    }
+
     document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape') {
-            const fsModal = document.getElementById('pet-fullscreen-image-modal');
-            if (fsModal && fsModal.style.display !== 'none') {
-                closeFullscreenImage();
+        const fsModal = document.getElementById('pet-fullscreen-image-modal');
+        const isFsOpen = fsModal && fsModal.style.display !== 'none';
+
+        if (isFsOpen) {
+            if (event.key === 'ArrowLeft') {
+                cycleFullscreenCarousel(-1);
+                event.preventDefault();
                 return;
             }
+            if (event.key === 'ArrowRight') {
+                cycleFullscreenCarousel(1);
+                event.preventDefault();
+                return;
+            }
+            if (event.key === 'Escape') {
+                closeFullscreenImage();
+                event.preventDefault();
+                return;
+            }
+        }
+
+        if (event.key === 'Escape') {
             closePetModal();
             closeAdoptionRequestModal();
         }
@@ -915,6 +1208,22 @@
         window.location.href = "{{ route('messages') }}?" + params.toString();
     }
 
+    function setHomeStatus(status) {
+        const input = document.getElementById('filter-status-input');
+        const form = document.getElementById('filter-form');
+        if (input && form) {
+            input.value = status;
+            if (window.showKupLoader) {
+                window.showKupLoader('Loading pets...');
+            }
+            form.submit();
+        } else {
+            const url = new URL(window.location.href);
+            url.searchParams.set('status', status);
+            window.location.href = url.toString();
+        }
+    }
+
     // Custom Styled Dropdowns for Search & Filter Bar
     document.addEventListener('DOMContentLoaded', function () {
         const customGroups = document.querySelectorAll('.custom-select-group');
@@ -986,6 +1295,81 @@
                 closeAllDropdowns();
             }
         });
+
+        // Live on-screen filtering for Home feed search (no dropdown, no Enter key)
+        const homeSearchInput = document.getElementById('home-search-input');
+        if (homeSearchInput) {
+            let searchDebounceTimer;
+            const petCards = Array.from(document.querySelectorAll('.pets-grid .pet-card'));
+            const emptyNotice = document.querySelector('.pets-grid .empty-feed-card');
+            const metaCountEl = document.querySelector('.status-pills-meta');
+
+            homeSearchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault(); // Do not trigger form submit on Enter
+                }
+            });
+
+            homeSearchInput.addEventListener('input', function() {
+                clearTimeout(searchDebounceTimer);
+                searchDebounceTimer = setTimeout(function() {
+                    const query = homeSearchInput.value.trim().toLowerCase();
+                    let visibleCount = 0;
+
+                    petCards.forEach(function(card) {
+                        const name = (card.querySelector('.pet-name')?.textContent || '').toLowerCase();
+                        const species = (card.querySelector('.pet-species-pill')?.textContent || '').toLowerCase();
+                        const pills = (card.querySelector('.pet-details-pills')?.textContent || '').toLowerCase();
+                        const desc = (card.querySelector('.pet-description')?.textContent || '').toLowerCase();
+                        const poster = (card.querySelector('.pet-poster-tag')?.textContent || '').toLowerCase();
+                        const loc = (card.querySelector('.pet-location')?.textContent || '').toLowerCase();
+
+                        const matches = !query ||
+                            name.includes(query) ||
+                            species.includes(query) ||
+                            pills.includes(query) ||
+                            desc.includes(query) ||
+                            poster.includes(query) ||
+                            loc.includes(query);
+
+                        if (matches) {
+                            card.style.display = '';
+                            visibleCount++;
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+
+                    // Manage dynamic empty state if none match
+                    let liveEmptyCard = document.getElementById('home-live-empty-card');
+                    if (visibleCount === 0 && petCards.length > 0) {
+                        if (!liveEmptyCard) {
+                            liveEmptyCard = document.createElement('div');
+                            liveEmptyCard.id = 'home-live-empty-card';
+                            liveEmptyCard.className = 'empty-feed-card';
+                            liveEmptyCard.innerHTML = `
+                                <span class="empty-icon">
+                                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="m8 8 6 6"/><path d="m14 8-6 6"/></svg>
+                                </span>
+                                <h3>No pets match "${escapeHTML(query)}"</h3>
+                                <p class="text-muted">Try a different name, breed, or clear your search.</p>
+                            `;
+                            const grid = document.querySelector('.pets-grid');
+                            if (grid) grid.appendChild(liveEmptyCard);
+                        } else {
+                            liveEmptyCard.style.display = '';
+                            liveEmptyCard.querySelector('h3').textContent = `No pets match "${query}"`;
+                        }
+                    } else if (liveEmptyCard) {
+                        liveEmptyCard.style.display = 'none';
+                    }
+
+                    if (metaCountEl) {
+                        metaCountEl.textContent = `Showing ${visibleCount} pet${visibleCount === 1 ? '' : 's'}`;
+                    }
+                }, 250);
+            });
+        }
     });
 </script>
 @endsection

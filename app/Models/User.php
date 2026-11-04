@@ -23,6 +23,12 @@ class User extends Authenticatable
         'email',
         'password',
         'is_admin',
+        'is_blocked',
+        'is_verified',
+        'status',
+        'archived_at',
+        'block_reason',
+        'blocked_at',
         'requests_last_viewed_at',
     ];
 
@@ -47,8 +53,23 @@ class User extends Authenticatable
             'email_verified_at'        => 'datetime',
             'password'                 => 'hashed',
             'is_admin'                 => 'boolean',
+            'is_blocked'               => 'boolean',
+            'is_verified'              => 'boolean',
+            'archived_at'              => 'datetime',
+            'blocked_at'               => 'datetime',
             'requests_last_viewed_at'  => 'datetime',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (User $user) {
+            if ($user->isDirty('status') && !$user->isDirty('is_blocked')) {
+                $user->is_blocked = in_array($user->status, ['blocked', 'removed']);
+            } elseif ($user->isDirty('is_blocked') && !$user->isDirty('status')) {
+                $user->status = $user->is_blocked ? 'blocked' : 'active';
+            }
+        });
     }
 
     public function sentMessages()
