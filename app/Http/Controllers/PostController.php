@@ -723,9 +723,9 @@ class PostController extends Controller
         }
 
         // Supabase Storage Bucket details
-        $bucket = env('SUPABASE_STORAGE_BUCKET', env('AWS_BUCKET', 'pets'));
-        $projectRef = env('SUPABASE_PROJECT_REF', 'hlaoqkozskcyskkhubtw');
-        $publicCdnUrl = rtrim(env('SUPABASE_STORAGE_URL', env('AWS_URL', "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}")), '/') . '/' . $filename;
+        $bucket = config('services.supabase.bucket', env('SUPABASE_STORAGE_BUCKET', env('AWS_BUCKET', 'pets')));
+        $projectRef = config('services.supabase.project_ref', env('SUPABASE_PROJECT_REF', 'hlaoqkozskcyskkhubtw'));
+        $publicCdnUrl = rtrim(config('services.supabase.url', env('SUPABASE_STORAGE_URL', env('AWS_URL', "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}"))), '/') . '/' . $filename;
 
         // 1. Attempt upload using configured Supabase / S3 disk driver
         $cloudDisk = config('filesystems.disks.supabase') ? 'supabase' : 's3';
@@ -743,7 +743,7 @@ class PostController extends Controller
         }
 
         // 2. Direct Supabase Storage REST API (with API Key if present)
-        $supabaseApiKey = env('SUPABASE_KEY', env('SUPABASE_SERVICE_ROLE_KEY', env('SUPABASE_ANON_KEY')));
+        $supabaseApiKey = config('services.supabase.key') ?: env('SUPABASE_KEY', env('SUPABASE_SERVICE_ROLE_KEY', env('SUPABASE_ANON_KEY')));
         if (!empty($supabaseApiKey)) {
             try {
                 $contents = file_get_contents($tempPath);

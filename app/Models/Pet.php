@@ -267,9 +267,9 @@ class Pet extends Model
         $filename = basename($path);
 
         // Build the canonical Supabase CDN URL for this file
-        $bucket = env('SUPABASE_STORAGE_BUCKET', env('AWS_BUCKET', 'pets'));
-        $projectRef = env('SUPABASE_PROJECT_REF', 'hlaoqkozskcyskkhubtw');
-        $baseUrl = rtrim(env('SUPABASE_STORAGE_URL', env('AWS_URL', "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}")), '/');
+        $bucket = config('services.supabase.bucket', env('SUPABASE_STORAGE_BUCKET', 'pets'));
+        $projectRef = config('services.supabase.project_ref', env('SUPABASE_PROJECT_REF', 'hlaoqkozskcyskkhubtw'));
+        $baseUrl = rtrim(config('services.supabase.url', env('SUPABASE_STORAGE_URL', "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}")), '/');
         $supabaseUrl = $baseUrl . '/' . $filename;
 
         // On local dev: prefer the locally-stored copy for faster display (avoids CDN round-trip).
