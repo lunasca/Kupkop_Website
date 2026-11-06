@@ -266,17 +266,21 @@ class Pet extends Model
         // Relative path (e.g. "pets/abc.jpg" or "abc.jpg")
         $filename = basename($path);
 
-        // Check if file is present in local public storage
-        if (file_exists(public_path('storage/pets/' . $filename)) || file_exists(storage_path('app/public/pets/' . $filename))) {
-            return '/storage/pets/' . $filename;
-        }
-
-        // Default to public Supabase Storage CDN URL
+        // Build the canonical Supabase CDN URL for this file
         $bucket = env('SUPABASE_STORAGE_BUCKET', env('AWS_BUCKET', 'pets'));
         $projectRef = env('SUPABASE_PROJECT_REF', 'hlaoqkozskcyskkhubtw');
         $baseUrl = rtrim(env('SUPABASE_STORAGE_URL', env('AWS_URL', "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}")), '/');
+        $supabaseUrl = $baseUrl . '/' . $filename;
 
-        return $baseUrl . '/' . $filename;
+        // On local dev: prefer the locally-stored copy for faster display (avoids CDN round-trip).
+        // This check is skipped in production (Vercel/serverless) where there is no local disk.
+        if (app()->environment('local') &&
+            (file_exists(public_path('storage/pets/' . $filename)) || file_exists(storage_path('app/public/pets/' . $filename)))) {
+            return '/storage/pets/' . $filename;
+        }
+
+        // Always return the full Supabase CDN URL in all other environments (staging, production).
+        return $supabaseUrl;
     }
 
     /**

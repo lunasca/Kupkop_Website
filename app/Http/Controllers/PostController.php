@@ -752,20 +752,28 @@ class PostController extends Controller
                     'Authorization' => 'Bearer ' . $supabaseApiKey,
                     'apikey'        => $supabaseApiKey,
                     'Content-Type'  => $mimeType,
+                    'x-upsert'      => 'true',  // Allow overwriting if filename already exists
                 ])->withBody($contents, $mimeType)
                   ->post("https://{$projectRef}.supabase.co/storage/v1/object/{$bucket}/{$filename}");
 
                 if ($response->successful()) {
                     return $publicCdnUrl;
                 }
+                // Log upload failure for debugging (non-fatal, falls through to local fallback)
+                \Illuminate\Support\Facades\Log::warning('Supabase REST upload failed', [
+                    'status' => $response->status(),
+                    'body'   => $response->body(),
+                    'file'   => $filename,
+                ]);
             } catch (\Throwable $e) {
-                // REST API threw exception
+                \Illuminate\Support\Facades\Log::warning('Supabase REST upload exception', ['error' => $e->getMessage(), 'file' => $filename]);
             }
         }
 
-        // 3. No cloud credentials available — local dev fallback.
-        //    Save the file to public/storage/pets/ so it's accessible via /storage/pets/<filename>.
-        //    Store only the relative path so formatPetImageUrl() can resolve it correctly.
+        // 3. Local dev fallback — save to public disk for local access.
+        //    ALWAYS return the full Supabase CDN URL so database records are environment-agnostic.
+        //    This ensures production (Vercel/serverless) can display images even if the local
+        //    file is unavailable — the URL points to the correct Supabase bucket path.
         try {
             $contents = file_get_contents($tempPath);
             Storage::disk('public')->put('pets/' . $filename, $contents);
@@ -773,7 +781,8 @@ class PostController extends Controller
             // Ignore storage failure — file may already be accessible from the temp upload path
         }
 
-        // Return a relative path that formatPetImageUrl() resolves to /storage/pets/<filename>
-        return 'pets/' . $filename;
+        // Always return the full public Supabase CDN URL — never a relative path.
+        // This ensures images are resolvable in all environments (local, Vercel, staging).
+        return $publicCdnUrl;
     }
 }
