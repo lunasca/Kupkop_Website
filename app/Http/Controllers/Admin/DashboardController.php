@@ -92,7 +92,11 @@ class DashboardController extends Controller
         $activities = [];
 
         // 1. Recent pets posted
-        $recentPets = Pet::with('user')->latest()->take(5)->get();
+        $recentPets = Pet::select('id', 'name', 'posted_by', 'user_id', 'created_at')
+            ->with('user:id,name')
+            ->latest()
+            ->take(5)
+            ->get();
         foreach ($recentPets as $pet) {
             $poster = $pet->posted_by ?? ($pet->user->name ?? 'A user');
             $activities[] = [
@@ -104,7 +108,11 @@ class DashboardController extends Controller
         }
 
         // 2. Recent non-admin user registrations
-        $recentUsers = User::where('is_admin', false)->latest()->take(5)->get();
+        $recentUsers = User::select('id', 'name', 'created_at')
+            ->where('is_admin', false)
+            ->latest()
+            ->take(5)
+            ->get();
         foreach ($recentUsers as $user) {
             $activities[] = [
                 'dot'       => 'green',
@@ -115,7 +123,11 @@ class DashboardController extends Controller
         }
 
         // 3. Recently adopted or archived pets
-        $archivedPets = Pet::whereIn('status', ['Adopted', 'Archived'])->latest('updated_at')->take(5)->get();
+        $archivedPets = Pet::select('id', 'name', 'status', 'updated_at')
+            ->whereIn('status', ['Adopted', 'Archived'])
+            ->latest('updated_at')
+            ->take(5)
+            ->get();
         foreach ($archivedPets as $pet) {
             $activities[] = [
                 'dot'       => 'red',
@@ -145,14 +157,23 @@ class DashboardController extends Controller
 
     /**
      * Calculate Total Posts and Cats vs. Dogs breakdown metrics.
-     * Strictly excludes archived posts.
+     * Strictly excludes archived posts. Consolidated into a single aggregation query.
      */
     protected function calculatePostSpeciesAnalytics(): array
     {
-        $baseQuery = Pet::whereNull('archived_at');
-        $total = (clone $baseQuery)->count();
-        $dogs = (clone $baseQuery)->whereRaw('LOWER(TRIM(species)) IN (?, ?)', ['dog', 'dogs'])->count();
-        $cats = (clone $baseQuery)->whereRaw('LOWER(TRIM(species)) IN (?, ?)', ['cat', 'cats'])->count();
+        $agg = Pet::selectRaw("
+            COUNT(CASE WHEN archived_at IS NULL THEN 1 END) as total,
+            COUNT(CASE WHEN archived_at IS NULL AND LOWER(TRIM(species)) IN ('dog', 'dogs') THEN 1 END) as dogs,
+            COUNT(CASE WHEN archived_at IS NULL AND LOWER(TRIM(species)) IN ('cat', 'cats') THEN 1 END) as cats,
+            COUNT(CASE WHEN archived_at IS NULL AND LOWER(status) = 'available' THEN 1 END) as available,
+            COUNT(CASE WHEN archived_at IS NULL AND LOWER(status) = 'adopted' THEN 1 END) as adopted,
+            COUNT(CASE WHEN archived_at IS NULL AND LOWER(status) = 'pending' THEN 1 END) as pending,
+            COUNT(CASE WHEN archived_at IS NOT NULL THEN 1 END) as archived
+        ")->first();
+
+        $total = (int) ($agg->total ?? 0);
+        $dogs  = (int) ($agg->dogs ?? 0);
+        $cats  = (int) ($agg->cats ?? 0);
         $other = max(0, $total - ($dogs + $cats));
 
         $dogPercent = $total > 0 ? round(($dogs / $total) * 100, 1) : 0;
@@ -160,10 +181,10 @@ class DashboardController extends Controller
         $otherPercent = $total > 0 ? round(($other / $total) * 100, 1) : 0;
 
         $statusCounts = [
-            'available' => (clone $baseQuery)->whereRaw('LOWER(status) = ?', ['available'])->count(),
-            'adopted'   => (clone $baseQuery)->whereRaw('LOWER(status) = ?', ['adopted'])->count(),
-            'pending'   => (clone $baseQuery)->whereRaw('LOWER(status) = ?', ['pending'])->count(),
-            'archived'  => Pet::whereNotNull('archived_at')->count(),
+            'available' => (int) ($agg->available ?? 0),
+            'adopted'   => (int) ($agg->adopted ?? 0),
+            'pending'   => (int) ($agg->pending ?? 0),
+            'archived'  => (int) ($agg->archived ?? 0),
         ];
 
         return [

@@ -30,12 +30,18 @@ class AccountController extends Controller
             $tab = 'users';
         }
 
-        // Live badge counts (exclude admin accounts)
-        $userCount    = User::where('is_admin', false)->whereNull('archived_at')->count();
-        $blockedCount = User::where('is_admin', false)->whereNull('archived_at')->where(function ($q) {
-            $q->whereIn('status', ['blocked', 'suspended', 'restricted'])->orWhere('is_blocked', true);
-        })->count();
-        $archiveCount = User::where('is_admin', false)->whereNotNull('archived_at')->count();
+        // Live badge counts (consolidated into a single query, excluding admin accounts)
+        $badgeCounts = User::where('is_admin', false)
+            ->selectRaw("
+                COUNT(CASE WHEN archived_at IS NULL THEN 1 END) as user_count,
+                COUNT(CASE WHEN archived_at IS NULL AND (status IN ('blocked', 'suspended', 'restricted') OR is_blocked = true) THEN 1 END) as blocked_count,
+                COUNT(CASE WHEN archived_at IS NOT NULL THEN 1 END) as archive_count
+            ")
+            ->first();
+
+        $userCount    = (int) ($badgeCounts->user_count ?? 0);
+        $blockedCount = (int) ($badgeCounts->blocked_count ?? 0);
+        $archiveCount = (int) ($badgeCounts->archive_count ?? 0);
 
         // Base query: never show admin accounts
         $query = User::where('is_admin', false);
@@ -69,15 +75,13 @@ class AccountController extends Controller
             });
         }
 
-        // Order newest first
-        $users = $query->latest()->get();
-
-        // Attach active post count to each user
-        $users->each(function (User $user) {
-            $user->active_posts_count = $user->pets()
-                ->whereNull('archived_at')
-                ->count();
-        });
+        // Order newest first with eager counted active posts (eliminates N+1 query problem) and pruned select columns
+        $users = $query->select([
+            'id', 'name', 'email', 'status', 'is_blocked', 'is_admin', 'is_verified',
+            'block_reason', 'blocked_at', 'archived_at', 'created_at', 'updated_at'
+        ])->withCount(['pets as active_posts_count' => function ($q) {
+            $q->whereNull('archived_at');
+        }])->latest()->get();
 
         return view('pages.admin.accounts', compact('users', 'tab', 'userCount', 'blockedCount', 'archiveCount'));
     }

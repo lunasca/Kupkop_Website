@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Pet;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class HomeController extends Controller
@@ -16,7 +17,31 @@ class HomeController extends Controller
         // Public feed: all non-archived, non-draft pets from active user accounts.
         // Verification (is_verified) is an admin-review marker only and does NOT gate
         // public visibility — posts appear on the feed as soon as they are published.
-        $query = Pet::with('user')
+        $query = Pet::select([
+                'id',
+                'user_id',
+                'name',
+                'species',
+                'breed',
+                'age',
+                'gender',
+                'vaccination_status',
+                'deworming_status',
+                'is_spayed_neutered',
+                'special_health_notes',
+                'description',
+                'image_path',
+                'status',
+                'location',
+                'rescuer_id',
+                'posted_by',
+                'is_verified',
+                'created_at',
+                'archived_at',
+            ])
+            ->with(['user' => function ($q) {
+                $q->select('id', 'name', 'is_verified', 'status', 'archived_at');
+            }])
             ->whereNull('archived_at')
             ->where('status', '!=', 'Draft')
             ->whereHas('user', function ($q) {
@@ -61,27 +86,40 @@ class HomeController extends Controller
             $query->where('gender', ucfirst(strtolower($request->gender)));
         }
 
-        // Count for status tabs: All, Available, Pending, Verified
-        $countBase = Pet::query()
-            ->whereNull('archived_at')
-            ->whereHas('user', function ($q) {
-                $q->where('status', 'active')
-                  ->whereNull('archived_at');
-            })
-            ->where('status', '!=', 'Draft');
+        // Count for status tabs: All, Available, Pending, Verified (safely cached with short TTL)
+        $statusCounts = Cache::remember('home_status_counts', 60, function () {
+            $countBase = Pet::query()
+                ->whereNull('archived_at')
+                ->whereHas('user', function ($q) {
+                    $q->where('status', 'active')
+                      ->whereNull('archived_at');
+                })
+                ->where('status', '!=', 'Draft');
 
-        $statusCounts = [
-            'all'       => (clone $countBase)->count(),
-            'available' => (clone $countBase)->where('status', 'Available')->count(),
-            'pending'   => (clone $countBase)->where('status', 'Pending')->count(),
-            'verified'  => (clone $countBase)->where(function ($q) {
+            $rawCounts = (clone $countBase)
+                ->selectRaw("
+                    COUNT(*) as all_count,
+                    COUNT(CASE WHEN status = 'Available' THEN 1 END) as available_count,
+                    COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending_count,
+                    COUNT(CASE WHEN status = 'Adopted' THEN 1 END) as adopted_count
+                ")
+                ->first();
+
+            $verifiedCount = (clone $countBase)->where(function ($q) {
                 $q->where('is_verified', true)
                   ->orWhereHas('user', function ($uq) {
                       $uq->where('is_verified', true);
                   });
-            })->count(),
-            'adopted'   => (clone $countBase)->where('status', 'Adopted')->count(),
-        ];
+            })->count();
+
+            return [
+                'all'       => (int) ($rawCounts->all_count ?? 0),
+                'available' => (int) ($rawCounts->available_count ?? 0),
+                'pending'   => (int) ($rawCounts->pending_count ?? 0),
+                'verified'  => (int) $verifiedCount,
+                'adopted'   => (int) ($rawCounts->adopted_count ?? 0),
+            ];
+        });
 
         // 5. Status filter (default: all)
         $selectedStatus = strtolower($request->get('status', 'all'));
@@ -114,14 +152,42 @@ class HomeController extends Controller
             })->values();
         }
 
-        // 6. Admin summary stats (for conditional admin widget on the public home feed)
+        // 6. Admin summary stats (only queried when admin user is authenticated to save query overhead for guests/users)
         $adminStats = [
-            'total_listed' => Pet::whereNull('archived_at')->where('status', '!=', 'Draft')->count(),
-            'available'    => Pet::whereNull('archived_at')->where('status', 'Available')->count(),
-            'pending'      => Pet::whereNull('archived_at')->where('status', 'Pending')->count(),
+            'total_listed' => $statusCounts['all'],
+            'available'    => $statusCounts['available'],
+            'pending'      => $statusCounts['pending'],
         ];
 
-        return view('pages.home', compact('pets', 'statusCounts', 'adminStats'));
+        if (auth()->check() && auth()->user()->is_admin) {
+            $adminCounts = Pet::whereNull('archived_at')
+                ->where('status', '!=', 'Draft')
+                ->selectRaw("
+                    COUNT(*) as total_listed,
+                    COUNT(CASE WHEN status = 'Available' THEN 1 END) as available,
+                    COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending
+                ")
+                ->first();
+
+            if ($adminCounts) {
+                $adminStats = [
+                    'total_listed' => (int) ($adminCounts->total_listed ?? 0),
+                    'available'    => (int) ($adminCounts->available ?? 0),
+                    'pending'      => (int) ($adminCounts->pending ?? 0),
+                ];
+            }
+        }
+
+        // Pre-fetch pending adoption requests for the authenticated user to eliminate query overhead in blade view
+        $myPendingPetIds = [];
+        if (auth()->check()) {
+            $myPendingPetIds = \App\Models\AdoptionRequest::where('user_id', auth()->id())
+                ->where('status', 'Pending')
+                ->pluck('pet_id')
+                ->all();
+        }
+
+        return view('pages.home', compact('pets', 'statusCounts', 'adminStats', 'myPendingPetIds'));
     }
 
     /**

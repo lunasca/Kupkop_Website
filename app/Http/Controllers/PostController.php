@@ -7,7 +7,10 @@ use App\Models\AdoptionRequest;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class PostController extends Controller
@@ -39,15 +42,26 @@ class PostController extends Controller
         // Stamp the "last viewed" time so the navbar badge clears after visiting
         Auth::user()->update(['requests_last_viewed_at' => now()]);
 
+        $petColumns = [
+            'id', 'user_id', 'name', 'species', 'breed', 'age', 'gender',
+            'vaccination_status', 'deworming_status', 'is_spayed_neutered',
+            'special_health_notes', 'description', 'image_path', 'status',
+            'location', 'rescuer_id', 'posted_by', 'is_verified', 'created_at', 'archived_at'
+        ];
+
         // Only show published/active posts under "My Active Animal Posts" (exclude Drafts & Archived)
-        $myPets = Pet::where('user_id', $userId)
+        $myPets = Pet::select($petColumns)
+            ->with(['user:id,name,is_verified,status'])
+            ->where('user_id', $userId)
             ->where('status', '!=', 'Draft')
             ->whereNull('archived_at')
             ->latest()
             ->get();
 
         // Draft posts kept separately for the dedicated Drafts section
-        $draftPets = Pet::where('user_id', $userId)
+        $draftPets = Pet::select($petColumns)
+            ->with(['user:id,name,is_verified,status'])
+            ->where('user_id', $userId)
             ->where('status', 'Draft')
             ->whereNull('archived_at')
             ->latest()
@@ -55,20 +69,38 @@ class PostController extends Controller
 
         // Fetch incoming adoption requests for active pets (show ONLY Pending)
         $petIds = $myPets->pluck('id');
-        $incomingRequests = AdoptionRequest::with('pet')
+        $incomingRequests = AdoptionRequest::select([
+                'id', 'pet_id', 'user_id', 'applicant_name', 'contact_number',
+                'email', 'barangay', 'message', 'status', 'created_at'
+            ])
+            ->with([
+                'pet:id,name,species,breed,age,gender,image_path,user_id,rescuer_id,posted_by',
+                'pet.user:id,name,is_verified',
+                'user:id,name,email'
+            ])
             ->whereIn('pet_id', $petIds)
             ->where('status', 'Pending')
             ->latest()
             ->get();
 
         // Fetch submitted adoption applications made by this user
-        $myApplications = AdoptionRequest::with(['pet.user'])
+        $myApplications = AdoptionRequest::select([
+                'id', 'pet_id', 'user_id', 'applicant_name', 'contact_number',
+                'email', 'barangay', 'message', 'status', 'created_at'
+            ])
+            ->with([
+                'pet:id,name,species,breed,age,gender,image_path,user_id,rescuer_id,posted_by',
+                'pet.user:id,name,is_verified',
+                'user:id,name,email'
+            ])
             ->where('user_id', $userId)
             ->latest()
             ->get();
 
         // Archived animal posts
-        $archivedPets = Pet::where('user_id', $userId)
+        $archivedPets = Pet::select($petColumns)
+            ->with(['user:id,name,is_verified,status'])
+            ->where('user_id', $userId)
             ->whereNotNull('archived_at')
             ->latest('archived_at')
             ->get();
@@ -112,9 +144,13 @@ class PostController extends Controller
             'is_spayed_neutered'   => ['nullable', 'boolean'],
             'special_health_notes' => ['nullable', 'string'],
             'description'          => [$isDraft ? 'nullable' : 'required', 'string', 'max:300'],
-            'pet_images'           => [$isDraft ? 'nullable' : ($request->hasFile('pet_image') ? 'nullable' : 'required'), 'array', 'max:5'],
-            'pet_images.*'         => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // Max 5MB per photo
-            'pet_image'            => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'pet_images'           => 'nullable|array|max:5',
+            'pet_images.*'         => 'image|mimes:jpeg,png,jpg,webp|max:5120',
+            'photos'               => 'nullable|array|max:5',
+            'photos.*'             => 'image|mimes:jpeg,png,jpg,webp|max:5120',
+            'images'               => 'nullable|array|max:5',
+            'images.*'             => 'image|mimes:jpeg,png,jpg,webp|max:5120',
+            'pet_image'            => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
             'action'               => ['nullable', 'string'], // Post or Draft
         ];
 
@@ -130,21 +166,41 @@ class PostController extends Controller
 
         $validated = $request->validate($rules, $messages);
 
+        if (!$isDraft) {
+            $hasAnyImage = $request->hasFile('pet_images') 
+                || $request->hasFile('photos') 
+                || $request->hasFile('images') 
+                || $request->hasFile('pet_image');
+            if (!$hasAnyImage) {
+                return back()->withErrors(['pet_images' => 'Please upload at least one main photo of the pet.'])->withInput();
+            }
+        }
+
         $imagePath = null;
-        $disk = config('filesystems.default', 'public');
-        if ($request->hasFile('pet_images')) {
-            $paths = [];
-            foreach ($request->file('pet_images') as $file) {
-                if ($file && $file->isValid()) {
-                    $paths[] = $file->store('pets', $disk);
+        $uploadedFiles = [];
+        foreach (['pet_images', 'photos', 'images', 'pet_image'] as $inputKey) {
+            if ($request->hasFile($inputKey)) {
+                $fileOrFiles = $request->file($inputKey);
+                if (is_array($fileOrFiles)) {
+                    foreach ($fileOrFiles as $f) {
+                        if ($f && $f->isValid()) {
+                            $uploadedFiles[] = $f;
+                        }
+                    }
+                } elseif ($fileOrFiles && $fileOrFiles->isValid()) {
+                    $uploadedFiles[] = $fileOrFiles;
                 }
             }
-            if (!empty($paths)) {
-                $imagePath = json_encode($paths);
+        }
+
+        if (!empty($uploadedFiles)) {
+            $paths = [];
+            foreach (array_slice($uploadedFiles, 0, 5) as $file) {
+                $paths[] = $this->uploadPetImageToSupabase($file);
             }
-        } elseif ($request->hasFile('pet_image')) {
-            $path = $request->file('pet_image')->store('pets', $disk);
-            $imagePath = json_encode([$path]);
+            if (!empty($paths)) {
+                $imagePath = json_encode(array_values($paths));
+            }
         }
 
         $status = $isDraft ? 'Draft' : 'Available';
@@ -174,6 +230,8 @@ class PostController extends Controller
             // Drafts are also unverified until the admin approves them once published.
             'is_verified'          => false,
         ]);
+
+        Cache::forget('home_status_counts');
 
         if ($isDraft) {
             return redirect()->route('my-posts')->with('success', 'Pet post saved as Draft!');
@@ -215,6 +273,10 @@ class PostController extends Controller
             'description'          => ['required', 'string', 'max:300'],
             'pet_images'           => ['nullable', 'array', 'max:5'],
             'pet_images.*'         => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'photos'               => ['nullable', 'array', 'max:5'],
+            'photos.*'             => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+            'images'               => ['nullable', 'array', 'max:5'],
+            'images.*'             => ['image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'pet_image'            => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'status'               => ['required', 'string', 'in:Available,Draft,Adopted'],
         ], [
@@ -223,19 +285,30 @@ class PostController extends Controller
             'pet_images.max'       => 'You may upload a maximum of 5 photos per post.',
         ]);
 
-        $disk = config('filesystems.default', 'public');
-        if ($request->hasFile('pet_images')) {
-            $paths = [];
-            foreach ($request->file('pet_images') as $file) {
-                if ($file && $file->isValid()) {
-                    $paths[] = $file->store('pets', $disk);
+        $uploadedUpdateFiles = [];
+        foreach (['pet_images', 'photos', 'images', 'pet_image'] as $inputKey) {
+            if ($request->hasFile($inputKey)) {
+                $fileOrFiles = $request->file($inputKey);
+                if (is_array($fileOrFiles)) {
+                    foreach ($fileOrFiles as $f) {
+                        if ($f && $f->isValid()) {
+                            $uploadedUpdateFiles[] = $f;
+                        }
+                    }
+                } elseif ($fileOrFiles && $fileOrFiles->isValid()) {
+                    $uploadedUpdateFiles[] = $fileOrFiles;
                 }
             }
-            if (!empty($paths)) {
-                $validated['image_path'] = json_encode($paths);
+        }
+
+        if (!empty($uploadedUpdateFiles)) {
+            $paths = [];
+            foreach (array_slice($uploadedUpdateFiles, 0, 5) as $file) {
+                $paths[] = $this->uploadPetImageToSupabase($file);
             }
-        } elseif ($request->hasFile('pet_image')) {
-            $validated['image_path'] = json_encode([$request->file('pet_image')->store('pets', $disk)]);
+            if (!empty($paths)) {
+                $validated['image_path'] = json_encode(array_values($paths));
+            }
         }
 
         $validated['is_spayed_neutered'] = $request->boolean('is_spayed_neutered');
@@ -248,6 +321,8 @@ class PostController extends Controller
         }
 
         $pet->update($validated);
+
+        Cache::forget('home_status_counts');
 
         return back()->with('success', $pet->name . '\'s details have been updated successfully!');
     }
@@ -269,12 +344,14 @@ class PostController extends Controller
         if ($pet->status === 'Adopted') {
             // Revert: make the post active again so it reappears on the feed
             $pet->update(['status' => 'Available']);
+            Cache::forget('home_status_counts');
 
             return back()->with('success', $pet->name . ' has been marked as Available again.');
         }
 
         // Forward: mark the pet as adopted
         $pet->update(['status' => 'Adopted']);
+        Cache::forget('home_status_counts');
 
         return back()->with('success', $pet->name . ' has been marked as Adopted!');
     }
@@ -289,6 +366,7 @@ class PostController extends Controller
         }
 
         $pet->update(['archived_at' => now()]);
+        Cache::forget('home_status_counts');
 
         return back()->with('success', 'Post "' . $pet->name . '" has been archived and moved to Archived Posts.');
     }
@@ -306,6 +384,7 @@ class PostController extends Controller
             'archived_at' => null,
             'status' => in_array($pet->status, ['Available', 'Pending', 'Adopted']) ? $pet->status : 'Available',
         ]);
+        Cache::forget('home_status_counts');
 
         return back()->with('success', 'Post "' . $pet->name . '" has been restored to active posts.');
     }
@@ -327,15 +406,30 @@ class PostController extends Controller
         if ($pet->image_path) {
             $decoded = json_decode($pet->image_path, true);
             $pathsToDelete = is_array($decoded) ? $decoded : [$pet->image_path];
-            $disk = config('filesystems.default', 'public');
+            $cloudDisk = config('filesystems.disks.supabase') ? 'supabase' : 's3';
             foreach ($pathsToDelete as $path) {
-                if ($path && !str_starts_with($path, 'http://') && !str_starts_with($path, 'https://') && Storage::disk($disk)->exists($path)) {
-                    Storage::disk($disk)->delete($path);
+                if ($path) {
+                    $filename = basename($path);
+                    try {
+                        if (Storage::disk($cloudDisk)->exists($filename)) {
+                            Storage::disk($cloudDisk)->delete($filename);
+                        }
+                    } catch (\Throwable $e) {
+                        // ignore cloud error
+                    }
+                    try {
+                        if (Storage::disk('public')->exists('pets/' . $filename)) {
+                            Storage::disk('public')->delete('pets/' . $filename);
+                        }
+                    } catch (\Throwable $e) {
+                        // ignore local error
+                    }
                 }
             }
         }
 
         $pet->delete();
+        Cache::forget('home_status_counts');
 
         $msg = $isDraft 
             ? 'Draft "' . $petName . '" has been deleted.' 
@@ -563,5 +657,123 @@ class PostController extends Controller
         $requestRecord->delete();
 
         return back()->with('success', 'Adoption application for ' . $petName . ' has been permanently deleted.');
+    }
+
+    /**
+     * Upload an uploaded pet image directly to Supabase Storage Bucket,
+     * applying client-safe image optimization (compression and resize),
+     * and returning the full public Supabase CDN URL for database storage.
+     */
+    protected function uploadPetImageToSupabase(\Illuminate\Http\UploadedFile $file): string
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
+        if ($extension === 'jpeg') {
+            $extension = 'jpg';
+        }
+        $filename = Str::random(40) . '.' . $extension;
+        $tempPath = $file->getRealPath();
+
+        // Performance Optimization: Image compression and max-dimension resizing before cloud upload
+        if (extension_loaded('gd') && in_array($extension, ['jpg', 'png', 'webp'])) {
+            try {
+                $imageInfo = @getimagesize($tempPath);
+                if ($imageInfo) {
+                    $origWidth = $imageInfo[0];
+                    $origHeight = $imageInfo[1];
+                    $mime = $imageInfo['mime'];
+                    $maxDimension = 1280;
+
+                    if ($origWidth > $maxDimension || $origHeight > $maxDimension || filesize($tempPath) > 400 * 1024) {
+                        $scale = min($maxDimension / max($origWidth, 1), $maxDimension / max($origHeight, 1), 1.0);
+                        $targetWidth = (int) round($origWidth * $scale);
+                        $targetHeight = (int) round($origHeight * $scale);
+
+                        $srcImg = match ($mime) {
+                            'image/jpeg' => @imagecreatefromjpeg($tempPath),
+                            'image/png'  => @imagecreatefrompng($tempPath),
+                            'image/webp' => @imagecreatefromwebp($tempPath),
+                            default      => null,
+                        };
+
+                        if ($srcImg) {
+                            $dstImg = imagecreatetruecolor($targetWidth, $targetHeight);
+                            if ($mime === 'image/png') {
+                                imagealphablending($dstImg, false);
+                                imagesavealpha($dstImg, true);
+                            }
+                            imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $targetWidth, $targetHeight, $origWidth, $origHeight);
+
+                            $compressedPath = tempnam(sys_get_temp_dir(), 'kupkop_opt_');
+                            if ($mime === 'image/png') {
+                                imagepng($dstImg, $compressedPath, 7);
+                            } else {
+                                imagejpeg($dstImg, $compressedPath, 82);
+                            }
+
+                            imagedestroy($srcImg);
+                            imagedestroy($dstImg);
+
+                            $tempPath = $compressedPath;
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Optimization failsafe: proceed with original file if GD processing hits any issue
+            }
+        }
+
+        // Supabase Storage Bucket details
+        $bucket = env('SUPABASE_STORAGE_BUCKET', env('AWS_BUCKET', 'pets'));
+        $projectRef = env('SUPABASE_PROJECT_REF', 'hlaoqkozskcyskkhubtw');
+        $publicCdnUrl = rtrim(env('SUPABASE_STORAGE_URL', env('AWS_URL', "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}")), '/') . '/' . $filename;
+
+        // 1. Attempt upload using configured Supabase / S3 disk driver
+        $cloudDisk = config('filesystems.disks.supabase') ? 'supabase' : 's3';
+        $cloudKey = config("filesystems.disks.{$cloudDisk}.key");
+        $cloudSecret = config("filesystems.disks.{$cloudDisk}.secret");
+
+        if (!empty($cloudKey) && !empty($cloudSecret)) {
+            try {
+                $contents = file_get_contents($tempPath);
+                Storage::disk($cloudDisk)->put($filename, $contents, 'public');
+                return $publicCdnUrl;
+            } catch (\Throwable $e) {
+                // S3 driver upload threw exception, try REST fallback below
+            }
+        }
+
+        // 2. Direct Supabase Storage REST API (with API Key if present)
+        $supabaseApiKey = env('SUPABASE_KEY', env('SUPABASE_SERVICE_ROLE_KEY', env('SUPABASE_ANON_KEY')));
+        if (!empty($supabaseApiKey)) {
+            try {
+                $contents = file_get_contents($tempPath);
+                $mimeType = $file->getMimeType() ?: 'image/jpeg';
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $supabaseApiKey,
+                    'apikey'        => $supabaseApiKey,
+                    'Content-Type'  => $mimeType,
+                ])->withBody($contents, $mimeType)
+                  ->post("https://{$projectRef}.supabase.co/storage/v1/object/{$bucket}/{$filename}");
+
+                if ($response->successful()) {
+                    return $publicCdnUrl;
+                }
+            } catch (\Throwable $e) {
+                // REST API threw exception
+            }
+        }
+
+        // 3. No cloud credentials available — local dev fallback.
+        //    Save the file to public/storage/pets/ so it's accessible via /storage/pets/<filename>.
+        //    Store only the relative path so formatPetImageUrl() can resolve it correctly.
+        try {
+            $contents = file_get_contents($tempPath);
+            Storage::disk('public')->put('pets/' . $filename, $contents);
+        } catch (\Throwable $e) {
+            // Ignore storage failure — file may already be accessible from the temp upload path
+        }
+
+        // Return a relative path that formatPetImageUrl() resolves to /storage/pets/<filename>
+        return 'pets/' . $filename;
     }
 }

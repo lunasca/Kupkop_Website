@@ -18,8 +18,22 @@
 
 <div class="pet-card" id="pet-card-{{ $pet->id }}">
     <div class="pet-image-container" style="background-color: {{ $pastelBg }}; cursor: pointer;" onclick="openPetModal({{ $pet->id }})" role="button" tabindex="0" title="Click to view {{ $pet->name }} details">
-        @if(!empty($pet->image_path))
-            <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}" class="pet-image" loading="lazy">
+        @php
+            $imageUrls = $pet->image_urls;
+            $photoCount = count($imageUrls);
+        @endphp
+        @if(!empty($pet->image_path) && $photoCount > 0)
+            <div class="pet-card-gallery-wrap" id="card-gallery-{{ $pet->id }}">
+                @foreach($imageUrls as $imgIndex => $imgUrl)
+                    <img src="{{ $imgUrl }}" 
+                         alt="{{ $pet->name }} - Photo {{ $imgIndex + 1 }}" 
+                         class="pet-image pet-card-slide pet-card-slide-{{ $pet->id }}" 
+                         loading="lazy" 
+                         data-index="{{ $imgIndex }}"
+                         style="{{ $imgIndex === 0 ? '' : 'display: none;' }}"
+                         onerror="this.onerror=null; this.src='{{ $isCat ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80' : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80' }}';">
+                @endforeach
+            </div>
         @else
             <div class="pet-image-placeholder" style="background-color: {{ $pastelBg }};">
                 <x-lucide-paw-print style="width: 52px; height: 52px; stroke-width: 1.5; color: #4A2E2B; opacity: 0.35;" />
@@ -40,14 +54,19 @@
             <span class="status-text">{{ ucfirst($pet->status ?? 'Available') }}</span>
         </div>
 
-        {{-- Multi-photo indicator badge (+N extra photos) --}}
-        @php
-            $photoCount = count($pet->image_paths);
-        @endphp
+        {{-- Multi-photo indicator badge (+N extra photos) & Carousel pagination dots --}}
         @if($photoCount > 1)
             <div class="pet-photos-badge" title="{{ $photoCount }} photos available">
                 <x-lucide-camera style="width: 12px; height: 12px; stroke-width: 2.2;" />
                 <span>+{{ $photoCount - 1 }}</span>
+            </div>
+            <div class="pet-card-carousel-dots" onclick="event.stopPropagation();" aria-label="Photo pagination">
+                @foreach($imageUrls as $dotIndex => $dotUrl)
+                    <button type="button" 
+                            class="card-dot-indicator card-dot-{{ $pet->id }} {{ $dotIndex === 0 ? 'active' : '' }}" 
+                            onclick="switchCardPhoto(event, {{ $pet->id }}, {{ $dotIndex }})"
+                            aria-label="View photo {{ $dotIndex + 1 }}"></button>
+                @endforeach
             </div>
         @endif
     </div>

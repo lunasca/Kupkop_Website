@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Pet;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\View\View;
 
 class PostController extends Controller
@@ -23,12 +24,23 @@ class PostController extends Controller
             $tab = 'all';
         }
 
-        // Live badge counts
-        $allCount = Pet::whereNull('archived_at')->count();
-        $archiveCount = Pet::whereNotNull('archived_at')->count();
+        // Live badge counts (consolidated into a single aggregation query)
+        $counts = Pet::selectRaw("
+            COUNT(CASE WHEN archived_at IS NULL THEN 1 END) as all_count,
+            COUNT(CASE WHEN archived_at IS NOT NULL THEN 1 END) as archive_count
+        ")->first();
 
-        // Base query depending on active tab
-        $query = Pet::with('user');
+        $allCount = (int) ($counts->all_count ?? 0);
+        $archiveCount = (int) ($counts->archive_count ?? 0);
+
+        // Base query depending on active tab with pruned columns
+        $petColumns = [
+            'id', 'user_id', 'name', 'species', 'breed', 'age', 'gender',
+            'status', 'location', 'rescuer_id', 'posted_by', 'is_verified',
+            'image_path', 'created_at', 'archived_at'
+        ];
+
+        $query = Pet::select($petColumns)->with(['user:id,name,email,is_verified,status']);
         if ($tab === 'archive') {
             $query->whereNotNull('archived_at');
         } else {
@@ -75,8 +87,8 @@ class PostController extends Controller
             }
         }
 
-        // Order newest first
-        $pets = $query->latest()->get();
+        // Order newest first with pagination to prevent unbounded memory growth
+        $pets = $query->latest()->paginate(25)->withQueryString();
 
         return view('pages.admin.posts', compact('pets', 'tab', 'allCount', 'archiveCount'));
     }
@@ -89,6 +101,7 @@ class PostController extends Controller
         abort_unless(auth()->user()->is_admin, 403, 'Unauthorized access to the Admin Portal.');
 
         $pet->update(['is_verified' => true]);
+        Cache::forget('home_status_counts');
 
         return back()->with('success', $pet->name . ' has been marked as verified.');
     }
@@ -101,6 +114,7 @@ class PostController extends Controller
         abort_unless(auth()->user()->is_admin, 403, 'Unauthorized access to the Admin Portal.');
 
         $pet->update(['is_verified' => false]);
+        Cache::forget('home_status_counts');
 
         return back()->with('success', $pet->name . ' is now marked as unverified.');
     }
@@ -113,6 +127,7 @@ class PostController extends Controller
         abort_unless(auth()->user()->is_admin, 403, 'Unauthorized access to the Admin Portal.');
 
         $pet->update(['archived_at' => now()]);
+        Cache::forget('home_status_counts');
 
         return back()->with('success', $pet->name . ' has been moved to the archive.');
     }
@@ -125,6 +140,7 @@ class PostController extends Controller
         abort_unless(auth()->user()->is_admin, 403, 'Unauthorized access to the Admin Portal.');
 
         $pet->update(['archived_at' => null]);
+        Cache::forget('home_status_counts');
 
         return back()->with('success', $pet->name . ' has been restored to active posts.');
     }
@@ -138,6 +154,7 @@ class PostController extends Controller
 
         $petName = $pet->name;
         $pet->delete();
+        Cache::forget('home_status_counts');
 
         return back()->with('success', $petName . ' has been permanently deleted.');
     }

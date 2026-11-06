@@ -12,36 +12,45 @@
     </div>
 
     {{-- Top Tabs with Badge Counts --}}
-    <div class="posts-tabs-row">
+    <div class="posts-tabs-row admin-accounts-tabs-row">
         <a
-            href="{{ route('admin.accounts', array_merge(request()->only(['search', 'status']), ['tab' => 'users'])) }}"
-            class="tab-pill {{ $tab === 'users' ? 'active' : '' }}"
+            href="#users"
+            class="tab-pill {{ $tab !== 'archive' && $tab !== 'blocked' ? 'active' : '' }}"
+            id="tab-btn-users"
+            onclick="switchAccountsTab('users', event)"
         >
+            <x-lucide-users style="width: 16px; height: 16px; stroke-width: 2.2;" />
             <span>User accounts</span>
-            <span class="tab-badge" id="user-count-badge">{{ $userCount }}</span>
+            <span class="tab-badge" id="user-count-badge">{{ max(0, $userCount - $blockedCount) }}</span>
         </a>
         <a
-            href="{{ route('admin.accounts', array_merge(request()->only(['search']), ['tab' => 'blocked'])) }}"
+            href="#blocked"
             class="tab-pill {{ $tab === 'blocked' ? 'active' : '' }}"
+            id="tab-btn-blocked"
+            onclick="switchAccountsTab('blocked', event)"
         >
+            <x-lucide-user-x style="width: 16px; height: 16px; stroke-width: 2.2;" />
             <span>Blocked Accounts</span>
             <span class="tab-badge" id="blocked-count-badge">{{ $blockedCount }}</span>
         </a>
         <a
-            href="{{ route('admin.accounts', array_merge(request()->only(['search']), ['tab' => 'archive'])) }}"
+            href="{{ route('admin.accounts', array_merge(request()->only(['search']), ['tab' => 'archive'])) }}#archive"
             class="tab-pill {{ $tab === 'archive' ? 'active' : '' }}"
+            id="tab-btn-archive"
+            onclick="switchAccountsTab('archive', event)"
         >
+            <x-lucide-archive style="width: 16px; height: 16px; stroke-width: 2.2;" />
             <span>Archive</span>
             <span class="tab-badge" id="archive-count-badge">{{ $archiveCount }}</span>
         </a>
     </div>
 
     {{-- Filters & Search (above table) --}}
-    <form method="GET" action="{{ route('admin.accounts') }}" class="posts-filters-form" id="admin-accounts-filter-form">
-        <input type="hidden" name="tab" value="{{ $tab }}">
+    <form method="GET" action="{{ route('admin.accounts') }}" class="posts-filters-form" id="admin-accounts-filter-form" onsubmit="event.preventDefault(); applyAccountFilters();">
+        <input type="hidden" name="tab" id="accounts-tab-input" value="{{ $tab }}">
 
-        {{-- Search Input --}}
-        <div class="filter-search-box">
+        {{-- Search Input (Full width, live filter across all 3 tabs) --}}
+        <div class="filter-search-box" style="flex: 1; max-width: 100%;">
             <span class="filter-search-icon">
                 <x-lucide-search style="width: 17px; height: 17px;" />
             </span>
@@ -54,233 +63,294 @@
                 id="accounts-search-input"
             >
         </div>
-
-        {{-- Status Filter (only relevant for User accounts tab) --}}
-        @if($tab === 'users')
-        <div class="admin-custom-select-group" data-filter="status" data-prefix="Status: ">
-            <input type="hidden" name="status" value="{{ request('status', 'all') }}">
-            <button type="button" class="admin-custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">
-                <span class="admin-custom-select-label">
-                    Status: {{ request('status') && strtolower(request('status')) !== 'all' ? ucfirst(request('status')) : 'All' }}
-                </span>
-                <x-lucide-chevron-down class="admin-custom-select-arrow" />
-            </button>
-            <ul class="admin-custom-select-dropdown" role="listbox">
-                @php $currStatus = strtolower(request('status', 'all')); @endphp
-                <li class="admin-custom-select-option {{ $currStatus === 'all' || !$currStatus ? 'selected' : '' }}" data-value="all" data-label="All">
-                    <x-lucide-check class="admin-option-check-icon" />
-                    <span>All</span>
-                </li>
-                <li class="admin-custom-select-option {{ $currStatus === 'active' ? 'selected' : '' }}" data-value="active" data-label="Active">
-                    <x-lucide-check class="admin-option-check-icon" />
-                    <span>Active</span>
-                </li>
-                <li class="admin-custom-select-option {{ $currStatus === 'blocked' ? 'selected' : '' }}" data-value="blocked" data-label="Blocked">
-                    <x-lucide-check class="admin-option-check-icon" />
-                    <span>Blocked</span>
-                </li>
-            </ul>
-        </div>
-        @endif
     </form>
 
     {{-- Accounts Table Card --}}
     <div class="posts-table-card">
-        @if($users->isEmpty())
-            <div style="padding: 3.5rem 1.5rem; text-align: center; color: #71655B;">
-                <div style="width: 52px; height: 52px; background: #FAF5EE; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; color: #4A2E2B;">
-                    <x-lucide-users style="width: 26px; height: 26px;" />
-                </div>
-                <h3 style="font-size: 1.15rem; font-weight: 700; color: #2D1810; margin: 0 0 0.35rem 0;">
-                    @if($tab === 'archive')
-                        No archived accounts
-                    @elseif($tab === 'blocked')
-                        No blocked accounts
-                    @else
-                        No accounts found
-                    @endif
-                </h3>
-                <p style="font-size: 0.95rem; color: #71655B; margin: 0;">
-                    @if($tab === 'archive')
-                        Removed accounts will appear here.
-                    @elseif($tab === 'blocked')
-                        Restricted and blocked user accounts will appear here.
-                    @else
-                        Try adjusting your search or filter.
-                    @endif
-                </p>
+        {{-- Empty States for Each Tab --}}
+        <div id="accounts-empty-users" class="accounts-empty-box" style="display: none; padding: 3.5rem 1.5rem; text-align: center; color: #71655B;">
+            <div style="width: 52px; height: 52px; background: #FAF5EE; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; color: #4A2E2B;">
+                <x-lucide-users style="width: 26px; height: 26px;" />
             </div>
-        @else
-            <div style="overflow-x: auto;">
-                <table class="posts-table">
-                    <thead>
-                        <tr>
-                            <th style="min-width: 260px;">User</th>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: #2D1810; margin: 0 0 0.35rem 0;">No user accounts yet.</h3>
+            <p style="font-size: 0.95rem; color: #71655B; margin: 0;">Active accounts will appear here.</p>
+        </div>
+
+        <div id="accounts-empty-blocked" class="accounts-empty-box" style="display: none; padding: 3.5rem 1.5rem; text-align: center; color: #71655B;">
+            <div style="width: 52px; height: 52px; background: #FEF2F2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; color: #DC2626;">
+                <x-lucide-user-x style="width: 26px; height: 26px;" />
+            </div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: #2D1810; margin: 0 0 0.35rem 0;">No blocked accounts.</h3>
+            <p style="font-size: 0.95rem; color: #71655B; margin: 0;">Blocked user accounts will appear here.</p>
+        </div>
+
+        <div id="accounts-empty-archive" class="accounts-empty-box" style="display: none; padding: 3.5rem 1.5rem; text-align: center; color: #71655B;">
+            <div style="width: 52px; height: 52px; background: #FAF5EE; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; color: #4A2E2B;">
+                <x-lucide-archive style="width: 26px; height: 26px;" />
+            </div>
+            <h3 style="font-size: 1.15rem; font-weight: 700; color: #2D1810; margin: 0 0 0.35rem 0;">The archive is empty.</h3>
+            <p style="font-size: 0.95rem; color: #71655B; margin: 0;">Removed accounts will appear here.</p>
+        </div>
+
+        <div id="accounts-table-wrapper" style="overflow-x: auto;">
+            <table class="posts-table">
+                <thead>
+                    <tr>
+                        <th style="min-width: 260px;">User</th>
+                        <th style="min-width: 160px;">Joined</th>
+                        <th style="min-width: 100px;">Posts</th>
+                        @if($tab === 'blocked')
+                            <th style="min-width: 120px;">Account Role</th>
+                            <th style="min-width: 160px;">Date Blocked</th>
+                            <th style="min-width: 220px;">Reason for Block</th>
+                        @else
+                            <th style="min-width: 140px;">Status</th>
+                        @endif
+                        <th style="min-width: 200px; text-align: right;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($users as $user)
+                        @php
+                            $isBlocked = ($user->status === 'blocked' || $user->is_blocked);
+                            $userStatusCategory = ($tab === 'archive') ? 'archive' : ($isBlocked ? 'blocked' : 'active');
+                            $initial = strtoupper(substr($user->name ?? 'U', 0, 1));
+                            $avatarColors = [
+                                'A' => ['#FEE2E2', '#DC2626'], 'B' => ['#DBEAFE', '#1D4ED8'],
+                                'C' => ['#D1FAE5', '#065F46'], 'D' => ['#FEF3C7', '#D97706'],
+                                'E' => ['#EDE9FE', '#6D28D9'], 'F' => ['#FFEDD5', '#C2410C'],
+                                'G' => ['#DCFCE7', '#15803D'], 'H' => ['#E0F2FE', '#0284C7'],
+                                'I' => ['#FCE7F3', '#BE185D'], 'J' => ['#FEF08A', '#92400E'],
+                                'K' => ['#D1FAE5', '#065F46'], 'L' => ['#FFEDD5', '#C2410C'],
+                                'M' => ['#FEE2E2', '#DC2626'], 'N' => ['#DBEAFE', '#1D4ED8'],
+                                'O' => ['#FEF3C7', '#D97706'], 'P' => ['#EDE9FE', '#6D28D9'],
+                                'Q' => ['#DCFCE7', '#15803D'], 'R' => ['#E0F2FE', '#0284C7'],
+                                'S' => ['#FCE7F3', '#BE185D'], 'T' => ['#FEF08A', '#92400E'],
+                                'U' => ['#D1FAE5', '#065F46'], 'V' => ['#DBEAFE', '#1D4ED8'],
+                                'W' => ['#FFEDD5', '#C2410C'], 'X' => ['#EDE9FE', '#6D28D9'],
+                                'Y' => ['#DCFCE7', '#15803D'], 'Z' => ['#E0F2FE', '#0284C7'],
+                            ];
+                            $color = $avatarColors[$initial] ?? ['#F3F4F6', '#6B7280'];
+                        @endphp
+                        <tr id="user-row-{{ $user->id }}"
+                            class="admin-account-row"
+                            data-account-status="{{ $userStatusCategory }}"
+                            data-name="{{ strtolower($user->name) }}"
+                            data-email="{{ strtolower($user->email) }}">
+                            {{-- User Column --}}
+                            <td>
+                                <div class="pet-cell">
+                                    <div class="user-avatar-circle" style="background-color: {{ $color[0] }}; color: {{ $color[1] }};">
+                                        {{ $initial }}
+                                    </div>
+                                    <div>
+                                        <div class="pet-name">{{ $user->name }}</div>
+                                        <div class="pet-id">{{ $user->email }}</div>
+                                    </div>
+                                </div>
+                            </td>
+
+                            {{-- Joined Column --}}
+                            <td>
+                                <span class="details-sub">
+                                    {{ $user->created_at->format('M j, Y') }}
+                                </span>
+                            </td>
+
+                            {{-- Posts Column --}}
+                            <td>
+                                <span class="posted-by-text" style="font-weight: 700;">
+                                    {{ $user->active_posts_count }}
+                                </span>
+                            </td>
+
+                            {{-- Status Badge Column (or blocked-tab columns) --}}
                             @if($tab === 'blocked')
-                                <th style="min-width: 140px;">Account Role</th>
-                                <th style="min-width: 170px;">Date Blocked</th>
-                                <th style="min-width: 240px;">Reason for Block</th>
+                                <td>
+                                    <span class="details-sub">{{ $user->is_admin ? 'Admin' : 'User' }}</span>
+                                </td>
+                                <td>
+                                    <span class="details-sub">{{ $user->blocked_at ? $user->blocked_at->format('M j, Y') : '—' }}</span>
+                                </td>
+                                <td>
+                                    <span class="details-sub" style="font-size: 0.88rem; color: #71655B;">{{ $user->block_reason ?: '—' }}</span>
+                                </td>
                             @else
-                                <th style="min-width: 160px;">Joined</th>
-                                <th style="min-width: 100px;">Posts</th>
-                                <th style="min-width: 140px;">Status</th>
+                                <td>
+                                    @if($tab === 'archive')
+                                        <span class="badge-archived">Archived</span>
+                                    @elseif($isBlocked)
+                                        <span class="badge-blocked">Blocked</span>
+                                    @else
+                                        <span class="badge-available">Active</span>
+                                    @endif
+                                </td>
                             @endif
-                            <th style="min-width: 200px; text-align: right;">Actions</th>
+
+                            {{-- Actions Column --}}
+                            <td>
+                                <div class="table-actions-cell">
+                                    @if($tab === 'archive')
+                                        {{-- Archive tab: Restore + Delete permanently --}}
+                                        <button
+                                            type="button"
+                                            class="btn-action-restore"
+                                            onclick="openRestoreModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                        >
+                                            Restore
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="btn-action-delete"
+                                            onclick="openDeleteModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                        >
+                                            Delete permanently
+                                        </button>
+                                    @elseif($isBlocked)
+                                        {{-- Blocked accounts tab: Unblock + Remove --}}
+                                        <button
+                                            type="button"
+                                            class="btn-action-view"
+                                            style="background: #FEF08A; color: #92400E; border: 1px solid #FDE047;"
+                                            onclick="openUnblockModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                        >
+                                            Unblock Account
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="btn-action-remove"
+                                            onclick="openRemoveModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                        >
+                                            Remove
+                                        </button>
+                                    @else
+                                        {{-- User accounts tab: Block + Remove --}}
+                                        <button
+                                            type="button"
+                                            class="btn-action-view"
+                                            onclick="openBlockModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                        >
+                                            Block
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="btn-action-remove"
+                                            onclick="openRemoveModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                        >
+                                            Remove
+                                        </button>
+                                    @endif
+                                </div>
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($users as $user)
-                            @php
-                                $initial = strtoupper(substr($user->name ?? 'U', 0, 1));
-                                $avatarColors = [
-                                    'A' => ['#FEE2E2', '#DC2626'], 'B' => ['#DBEAFE', '#1D4ED8'],
-                                    'C' => ['#D1FAE5', '#065F46'], 'D' => ['#FEF3C7', '#D97706'],
-                                    'E' => ['#EDE9FE', '#6D28D9'], 'F' => ['#FFEDD5', '#C2410C'],
-                                    'G' => ['#DCFCE7', '#15803D'], 'H' => ['#E0F2FE', '#0284C7'],
-                                    'I' => ['#FCE7F3', '#BE185D'], 'J' => ['#FEF08A', '#92400E'],
-                                    'K' => ['#D1FAE5', '#065F46'], 'L' => ['#FFEDD5', '#C2410C'],
-                                    'M' => ['#FEE2E2', '#DC2626'], 'N' => ['#DBEAFE', '#1D4ED8'],
-                                    'O' => ['#FEF3C7', '#D97706'], 'P' => ['#EDE9FE', '#6D28D9'],
-                                    'Q' => ['#DCFCE7', '#15803D'], 'R' => ['#E0F2FE', '#0284C7'],
-                                    'S' => ['#FCE7F3', '#BE185D'], 'T' => ['#FEF08A', '#92400E'],
-                                    'U' => ['#D1FAE5', '#065F46'], 'V' => ['#DBEAFE', '#1D4ED8'],
-                                    'W' => ['#FFEDD5', '#C2410C'], 'X' => ['#EDE9FE', '#6D28D9'],
-                                    'Y' => ['#DCFCE7', '#15803D'], 'Z' => ['#E0F2FE', '#0284C7'],
-                                ];
-                                $color = $avatarColors[$initial] ?? ['#F3F4F6', '#6B7280'];
-                            @endphp
-                            <tr id="user-row-{{ $user->id }}">
-                                {{-- User Column --}}
-                                <td>
-                                    <div class="pet-cell">
-                                        <div class="user-avatar-circle" style="background-color: {{ $color[0] }}; color: {{ $color[1] }};">
-                                            {{ $initial }}
-                                        </div>
-                                        <div>
-                                            <div class="pet-name">{{ $user->name }}</div>
-                                            <div class="pet-id">{{ $user->email }}</div>
-                                        </div>
-                                    </div>
-                                </td>
+                    @endforeach
+                </tbody>
+            </table>
 
-                                @if($tab === 'blocked')
-                                    {{-- Account Role Column --}}
-                                    <td>
-                                        <span class="badge-role" style="display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.82rem; font-weight: 700; background: #F3F4F6; color: #374151;">
-                                            {{ $user->active_posts_count > 0 ? 'Poster' : 'Resident' }}
-                                        </span>
-                                    </td>
+            {{-- Mobile Cards for Accounts (phone only) --}}
+            <div class="admin-mobile-cards" aria-label="Admin account cards">
+                @foreach($users as $user)
+                    @php
+                        $isBlocked = ($user->status === 'blocked' || $user->is_blocked);
+                        $userStatusCategory = ($tab === 'archive') ? 'archive' : ($isBlocked ? 'blocked' : 'active');
+                        $initial = strtoupper(substr($user->name ?? 'U', 0, 1));
+                        $avatarColors = [
+                            'A' => ['#FEE2E2', '#DC2626'], 'B' => ['#DBEAFE', '#1D4ED8'],
+                            'C' => ['#D1FAE5', '#065F46'], 'D' => ['#FEF3C7', '#D97706'],
+                            'E' => ['#EDE9FE', '#6D28D9'], 'F' => ['#FFEDD5', '#C2410C'],
+                            'G' => ['#DCFCE7', '#15803D'], 'H' => ['#E0F2FE', '#0284C7'],
+                            'I' => ['#FCE7F3', '#BE185D'], 'J' => ['#FEF08A', '#92400E'],
+                            'K' => ['#D1FAE5', '#065F46'], 'L' => ['#FFEDD5', '#C2410C'],
+                            'M' => ['#FEE2E2', '#DC2626'], 'N' => ['#DBEAFE', '#1D4ED8'],
+                            'O' => ['#FEF3C7', '#D97706'], 'P' => ['#EDE9FE', '#6D28D9'],
+                            'Q' => ['#DCFCE7', '#15803D'], 'R' => ['#E0F2FE', '#0284C7'],
+                            'S' => ['#FCE7F3', '#BE185D'], 'T' => ['#FEF08A', '#92400E'],
+                            'U' => ['#D1FAE5', '#065F46'], 'V' => ['#DBEAFE', '#1D4ED8'],
+                            'W' => ['#FFEDD5', '#C2410C'], 'X' => ['#EDE9FE', '#6D28D9'],
+                            'Y' => ['#DCFCE7', '#15803D'], 'Z' => ['#E0F2FE', '#0284C7'],
+                        ];
+                        $color = $avatarColors[$initial] ?? ['#F3F4F6', '#6B7280'];
+                    @endphp
+                    <div class="admin-user-card"
+                        data-account-status="{{ $userStatusCategory }}"
+                        data-name="{{ strtolower($user->name) }}"
+                        data-email="{{ strtolower($user->email) }}">
+                        <div class="admin-user-card-top">
+                            <div class="admin-user-avatar" style="background-color: {{ $color[0] }}; color: {{ $color[1] }};">
+                                {{ $initial }}
+                            </div>
+                            <div class="admin-user-info">
+                                <div class="admin-user-name">{{ $user->name }}</div>
+                                <div class="admin-user-email">{{ $user->email }}</div>
+                            </div>
+                            @if($tab === 'archive')
+                                <span class="badge-archived" style="flex-shrink:0;">Archived</span>
+                            @elseif($isBlocked)
+                                <span class="badge-blocked" style="flex-shrink:0;">Blocked</span>
+                            @else
+                                <span class="badge-available" style="flex-shrink:0;">Active</span>
+                            @endif
+                        </div>
 
-                                    {{-- Date Blocked Column --}}
-                                    <td>
-                                        <span class="details-sub">
-                                            {{ $user->blocked_at ? $user->blocked_at->format('M j, Y g:i A') : ($user->updated_at ? $user->updated_at->format('M j, Y') : '—') }}
-                                        </span>
-                                    </td>
+                        <div class="admin-user-meta">
+                            <span>Joined: <strong>{{ $user->created_at->format('M j, Y') }}</strong></span>
+                            <span>•</span>
+                            <span>Posts: <strong>{{ $user->active_posts_count }}</strong></span>
+                        </div>
 
-                                    {{-- Reason for Block Column --}}
-                                    <td>
-                                        <div style="font-size: 0.86rem; color: #991B1B; background: #FEF2F2; padding: 0.45rem 0.75rem; border-radius: 0.5rem; line-height: 1.45; border-left: 3px solid #DC2626; max-width: 320px; word-break: break-word;">
-                                            {{ $user->block_reason ?: 'Violation of community adoption guidelines' }}
-                                        </div>
-                                    </td>
-                                @else
-                                    {{-- Joined Column --}}
-                                    <td>
-                                        <span class="details-sub">
-                                            {{ $user->created_at->format('M j, Y') }}
-                                        </span>
-                                    </td>
-
-                                    {{-- Posts Column --}}
-                                    <td>
-                                        <span class="posted-by-text" style="font-weight: 700;">
-                                            {{ $user->active_posts_count }}
-                                        </span>
-                                    </td>
-
-                                    {{-- Status Badge Column --}}
-                                    <td>
-                                        @if($tab === 'archive')
-                                            <span class="badge-archived">Archived</span>
-                                        @elseif($user->status === 'blocked')
-                                            <span class="badge-blocked">Blocked</span>
-                                        @else
-                                            <span class="badge-available">Active</span>
-                                        @endif
-                                    </td>
-                                @endif
-
-                                {{-- Actions Column --}}
-                                <td>
-                                    <div class="table-actions-cell">
-                                        @if($tab === 'archive')
-                                            {{-- Archive tab: Restore + Delete permanently --}}
-                                            <button
-                                                type="button"
-                                                class="btn-action-restore"
-                                                onclick="openRestoreModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
-                                            >
-                                                Restore
-                                            </button>
-                                            <button
-                                                type="button"
-                                                class="btn-action-delete"
-                                                onclick="openDeleteModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
-                                            >
-                                                Delete permanently
-                                            </button>
-                                        @elseif($tab === 'blocked')
-                                            {{-- Blocked tab: Unblock Account + Remove --}}
-                                            <button
-                                                type="button"
-                                                class="btn-action-view"
-                                                onclick="openUnblockModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
-                                            >
-                                                Unblock Account
-                                            </button>
-                                            <button
-                                                type="button"
-                                                class="btn-action-remove"
-                                                onclick="openRemoveModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
-                                            >
-                                                Remove
-                                            </button>
-                                        @else
-                                            {{-- User accounts tab: Block/Unblock + Remove --}}
-                                            @if($user->status === 'blocked')
-                                                <button
-                                                    type="button"
-                                                    class="btn-action-view"
-                                                    onclick="openUnblockModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
-                                                >
-                                                    Unblock
-                                                </button>
-                                            @else
-                                                <button
-                                                    type="button"
-                                                    class="btn-action-view"
-                                                    onclick="openBlockModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
-                                                >
-                                                    Block
-                                                </button>
-                                            @endif
-                                            <button
-                                                type="button"
-                                                class="btn-action-remove"
-                                                onclick="openRemoveModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
-                                            >
-                                                Remove
-                                            </button>
-                                        @endif
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        <div class="admin-user-actions">
+                            @if($tab === 'archive')
+                                <button
+                                    type="button"
+                                    class="btn-action-restore"
+                                    onclick="openRestoreModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                >
+                                    Restore
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn-action-delete"
+                                    onclick="openDeleteModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                >
+                                    Delete permanently
+                                </button>
+                            @elseif($isBlocked)
+                                <button
+                                    type="button"
+                                    class="btn-action-view"
+                                    style="background: #FEF08A; color: #92400E; border: 1px solid #FDE047;"
+                                    onclick="openUnblockModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                >
+                                    Unblock Account
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn-action-remove"
+                                    onclick="openRemoveModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                >
+                                    Remove
+                                </button>
+                            @else
+                                <button
+                                    type="button"
+                                    class="btn-action-view"
+                                    onclick="openBlockModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                >
+                                    Block
+                                </button>
+                                <button
+                                    type="button"
+                                    class="btn-action-remove"
+                                    onclick="openRemoveModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
+                                >
+                                    Remove
+                                </button>
+                            @endif
+                        </div>
+                    </div>
+                @endforeach
             </div>
-        @endif
+        </div>
     </div>
 </div>
 
@@ -687,65 +757,130 @@
         });
     })();
 
-    // Live on-screen filtering for Accounts table (no dropdown, no Enter key)
-    (function() {
-        const searchInput = document.getElementById('accounts-search-input');
-        if (!searchInput) return;
+    // Tab switching and filtering
+    let currentTab = '{{ $tab === "archive" ? "archive" : "users" }}';
 
-        searchInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault(); // Do not trigger form submission on Enter
+    function switchAccountsTab(tab, event) {
+        if (event) event.preventDefault();
+
+        const isServerArchive = {{ $tab === 'archive' ? 'true' : 'false' }};
+        if (isServerArchive && tab !== 'archive') {
+            sessionStorage.setItem('adminAccountsTab', tab);
+            window.location.href = "{{ route('admin.accounts') }}#" + tab;
+            return;
+        }
+
+        if (!isServerArchive && tab === 'archive') {
+            sessionStorage.setItem('adminAccountsTab', 'archive');
+            window.location.href = "{{ route('admin.accounts', ['tab' => 'archive']) }}#archive";
+            return;
+        }
+
+        currentTab = tab;
+        sessionStorage.setItem('adminAccountsTab', tab);
+        try {
+            history.replaceState(null, '', '#' + tab);
+        } catch(e) {}
+
+        // Update active classes on tab pills
+        const pills = document.querySelectorAll('.admin-accounts-tabs-row .tab-pill');
+        pills.forEach(p => p.classList.remove('active'));
+        const activeBtn = document.getElementById('tab-btn-' + tab);
+        if (activeBtn) activeBtn.classList.add('active');
+
+        applyAccountFilters();
+    }
+
+    function applyAccountFilters() {
+        const searchInput = document.getElementById('accounts-search-input');
+        const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
+
+        const rows = document.querySelectorAll('.admin-account-row');
+        const cards = document.querySelectorAll('.admin-user-card');
+
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const status = row.getAttribute('data-account-status');
+            const name = row.getAttribute('data-name') || '';
+            const email = row.getAttribute('data-email') || '';
+
+            const matchesTab = (currentTab === 'archive' && status === 'archive') ||
+                               (currentTab === 'blocked' && status === 'blocked') ||
+                               (currentTab === 'users' && status === 'active');
+
+            const matchesSearch = !query || name.includes(query) || email.includes(query);
+
+            if (matchesTab && matchesSearch) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
             }
         });
 
-        let debounceTimer;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(function() {
-                const query = searchInput.value.trim().toLowerCase();
-                const table = document.querySelector('.posts-table');
-                if (!table) return;
+        cards.forEach(card => {
+            const status = card.getAttribute('data-account-status');
+            const name = card.getAttribute('data-name') || '';
+            const email = card.getAttribute('data-email') || '';
 
-                const rows = Array.from(table.querySelectorAll('tbody tr'));
-                let visibleCount = 0;
+            const matchesTab = (currentTab === 'archive' && status === 'archive') ||
+                               (currentTab === 'blocked' && status === 'blocked') ||
+                               (currentTab === 'users' && status === 'active');
 
-                rows.forEach(function(row) {
-                    if (row.id === 'admin-accounts-live-empty-row') return;
+            const matchesSearch = !query || name.includes(query) || email.includes(query);
 
-                    const text = (row.textContent || '').toLowerCase();
-                    const matches = !query || text.includes(query);
-
-                    if (matches) {
-                        row.style.display = '';
-                        visibleCount++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                // Live empty row handling
-                let emptyRow = document.getElementById('admin-accounts-live-empty-row');
-                const tbody = table.querySelector('tbody');
-                if (visibleCount === 0 && rows.length > 0 && tbody) {
-                    if (!emptyRow) {
-                        emptyRow = document.createElement('tr');
-                        emptyRow.id = 'admin-accounts-live-empty-row';
-                        emptyRow.innerHTML = `
-                            <td colspan="5" style="text-align: center; padding: 2.5rem 1rem; color: #71655B;">
-                                <p style="font-weight: 700; font-size: 1.05rem; margin-bottom: 0.35rem; color: #2D1810;">No matching accounts</p>
-                                <p style="font-size: 0.88rem; margin: 0;">No accounts match your search query "${searchInput.value.trim()}".</p>
-                            </td>
-                        `;
-                        tbody.appendChild(emptyRow);
-                    } else {
-                        emptyRow.style.display = '';
-                        emptyRow.querySelector('p:last-child').textContent = `No accounts match your search query "${searchInput.value.trim()}".`;
-                    }
-                } else if (emptyRow) {
-                    emptyRow.style.display = 'none';
-                }
-            }, 250);
+            if (matchesTab && matchesSearch) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
         });
-    })();
+
+        // Manage empty states
+        const emptyUsers = document.getElementById('accounts-empty-users');
+        const emptyBlocked = document.getElementById('accounts-empty-blocked');
+        const emptyArchive = document.getElementById('accounts-empty-archive');
+        const tableWrapper = document.getElementById('accounts-table-wrapper');
+
+        if (emptyUsers) emptyUsers.style.display = 'none';
+        if (emptyBlocked) emptyBlocked.style.display = 'none';
+        if (emptyArchive) emptyArchive.style.display = 'none';
+
+        if (visibleCount === 0) {
+            if (tableWrapper) tableWrapper.style.display = 'none';
+            if (currentTab === 'users' && emptyUsers) emptyUsers.style.display = 'block';
+            if (currentTab === 'blocked' && emptyBlocked) emptyBlocked.style.display = 'block';
+            if (currentTab === 'archive' && emptyArchive) emptyArchive.style.display = 'block';
+        } else {
+            if (tableWrapper) tableWrapper.style.display = '';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const hash = window.location.hash.replace('#', '');
+        const savedTab = sessionStorage.getItem('adminAccountsTab');
+        const isServerArchive = {{ $tab === 'archive' ? 'true' : 'false' }};
+
+        let initialTab = 'users';
+        if (isServerArchive) {
+            initialTab = 'archive';
+        } else if (urlParams.get('status') === 'blocked' || hash === 'blocked' || savedTab === 'blocked') {
+            initialTab = 'blocked';
+        } else if (hash === 'users' || savedTab === 'users') {
+            initialTab = 'users';
+        }
+
+        switchAccountsTab(initialTab);
+
+        const searchInput = document.getElementById('accounts-search-input');
+        if (searchInput) {
+            searchInput.addEventListener('input', applyAccountFilters);
+            searchInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') e.preventDefault();
+            });
+        }
+    });
 </script>
 @endpush

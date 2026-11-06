@@ -115,10 +115,12 @@ function togglePasswordVisibility(inputId, btn) {
 
     // ── Trigger: internal <a> links ──────────────────────────────────────────
     function isInternalLink(a) {
+        if (!a || !a.href) return false;
+        const rawHref = a.getAttribute('href') || '';
+        if (rawHref.startsWith('#') || rawHref.startsWith('javascript:') || a.hasAttribute('data-no-loader')) {
+            return false;
+        }
         return (
-            a &&
-            a.href &&
-            !a.href.startsWith('javascript') &&
             !a.target &&
             !a.download &&
             a.origin === location.origin &&

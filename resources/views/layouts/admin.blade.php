@@ -27,7 +27,7 @@
         <x-admin.sidebar />
 
         <div class="admin-main">
-            {{-- Mobile Header Bar (hamburger) --}}
+            {{-- Mobile Header Bar (Phone & Tablet) --}}
             <div class="admin-mobile-header" id="adminMobileHeader">
                 <button type="button" class="admin-mobile-toggle" id="adminMenuToggle" onclick="toggleAdminSidebar()" aria-label="Open navigation menu">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
@@ -36,8 +36,8 @@
                         <line x1="3" y1="18" x2="21" y2="18"></line>
                     </svg>
                 </button>
-                <a href="{{ route('admin.dashboard') }}" style="display: flex; align-items: center;">
-                    <img src="{{ asset('images/logo.png') }}" alt="Kupkop" style="height: 32px; width: auto;">
+                <a href="{{ route('admin.dashboard') }}" class="admin-mobile-brand" style="display: flex; align-items: center; text-decoration: none;">
+                    <img src="{{ asset('images/logo.png') }}" alt="Kupkop" style="height: 32px; width: auto; filter: brightness(0) invert(1);">
                 </a>
                 <div style="width: 44px;"></div>
             </div>
@@ -75,9 +75,9 @@
         overlay.classList.remove('active');
         document.body.style.overflow = '';
     }
-    // Close sidebar on window resize if above mobile breakpoint
+    // Close sidebar on window resize if above tablet breakpoint
     window.addEventListener('resize', function() {
-        if (window.innerWidth > 768) {
+        if (window.innerWidth > 1024) {
             closeAdminSidebar();
         }
     });

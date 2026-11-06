@@ -1170,8 +1170,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Live sync polling every 3.5 seconds
-    setInterval(pollThread, 3500);
+    // Live sync polling every 8 seconds (optimized for serverless DB)
+    setInterval(pollThread, 8000);
 
     // Expose hook so the global layout poller (app.blade.php, every 8 s) can
     // feed unread counts into the messages page without losing the user's scroll position.

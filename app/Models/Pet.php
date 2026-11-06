@@ -237,37 +237,63 @@ class Pet extends Model
     }
 
     /**
+     * Resolve a clean, environment-safe image URL for a pet photo.
+     * Supports full Supabase CDN URLs, external image URLs, and relative local storage paths.
+     */
+    public static function formatPetImageUrl(?string $path, ?string $species = 'Dog'): string
+    {
+        $fallback = strtolower($species ?? 'dog') === 'cat'
+            ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80'
+            : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80';
+
+        if (empty($path)) {
+            return $fallback;
+        }
+
+        // Full Supabase CDN or Web URL
+        if (str_starts_with($path, 'https://') || str_starts_with($path, 'http://')) {
+            // Rewrite legacy hardcoded localhost / 127.0.0.1 URLs to avoid broken images across environments
+            if (preg_match('#^https?://(localhost|127\.0\.0\.1)(:\d+)?/storage/(.*)$#i', $path, $matches)) {
+                $filename = basename($matches[3]);
+                if (file_exists(public_path('storage/pets/' . $filename))) {
+                    return '/storage/pets/' . $filename;
+                }
+                return 'https://hlaoqkozskcyskkhubtw.supabase.co/storage/v1/object/public/pets/' . $filename;
+            }
+            return $path;
+        }
+
+        // Relative path (e.g. "pets/abc.jpg" or "abc.jpg")
+        $filename = basename($path);
+
+        // Check if file is present in local public storage
+        if (file_exists(public_path('storage/pets/' . $filename)) || file_exists(storage_path('app/public/pets/' . $filename))) {
+            return '/storage/pets/' . $filename;
+        }
+
+        // Default to public Supabase Storage CDN URL
+        $bucket = env('SUPABASE_STORAGE_BUCKET', env('AWS_BUCKET', 'pets'));
+        $projectRef = env('SUPABASE_PROJECT_REF', 'hlaoqkozskcyskkhubtw');
+        $baseUrl = rtrim(env('SUPABASE_STORAGE_URL', env('AWS_URL', "https://{$projectRef}.supabase.co/storage/v1/object/public/{$bucket}")), '/');
+
+        return $baseUrl . '/' . $filename;
+    }
+
+    /**
      * Helper accessor for pet image URL (supports local uploaded images or full web URLs).
      * If JSON array is present, uses the first image as the primary cover.
      */
     public function getImageUrlAttribute(): string
     {
         if (empty($this->image_path)) {
-            return strtolower($this->species) === 'cat'
-                ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80'
-                : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80';
+            return self::formatPetImageUrl(null, $this->species);
         }
 
         // Handle JSON multi-image array: use first image as primary
         $decoded = json_decode($this->image_path, true);
         $firstPath = (is_array($decoded) && !empty($decoded)) ? $decoded[0] : $this->image_path;
 
-        if (empty($firstPath)) {
-            return strtolower($this->species) === 'cat'
-                ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80'
-                : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80';
-        }
-
-        if (str_starts_with($firstPath, 'http://') || str_starts_with($firstPath, 'https://')) {
-            return $firstPath;
-        }
-
-        $disk = config('filesystems.default', 'public');
-        if ($disk === 'public' || $disk === 'local') {
-            return asset('storage/' . $firstPath);
-        }
-
-        return Storage::disk($disk)->url($firstPath);
+        return self::formatPetImageUrl($firstPath, $this->species);
     }
 
     /**
@@ -298,21 +324,9 @@ class Pet extends Model
     {
         $paths = $this->image_paths;
         if (empty($paths)) {
-            $fallback = strtolower($this->species) === 'cat'
-                ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80'
-                : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80';
-            return [$fallback];
+            return [self::formatPetImageUrl(null, $this->species)];
         }
 
-        $disk = config('filesystems.default', 'public');
-        return array_map(function (string $path) use ($disk) {
-            if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
-                return $path;
-            }
-            if ($disk === 'public' || $disk === 'local') {
-                return asset('storage/' . $path);
-            }
-            return Storage::disk($disk)->url($path);
-        }, $paths);
+        return array_map(fn (string $path) => self::formatPetImageUrl($path, $this->species), $paths);
     }
 }

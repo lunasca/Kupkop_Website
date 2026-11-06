@@ -66,7 +66,7 @@
                     {{-- Multi-image preview container (Cleaned up, organized, and uncluttered) --}}
                     <div id="image-preview-box" class="multi-image-preview-container" style="display: none; width: 100%;">
                         <div class="preview-main-frame">
-                            <img id="image-preview" src="" alt="Photo Preview">
+                            <img id="image-preview" src="" alt="Photo Preview" loading="lazy">
                         </div>
                         <div id="preview-thumbnails-grid" class="preview-thumbnails-grid"></div>
                         <div class="preview-actions-bar">

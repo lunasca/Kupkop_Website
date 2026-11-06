@@ -54,7 +54,7 @@
         <script>
         (function () {
             'use strict';
-            const POLL_INTERVAL = 8000; // 8 s — slower than in-page poll to reduce server load
+            const POLL_INTERVAL = 30000; // 30 s — optimized for serverless / pooled database
             let globalPollTimer = null;
 
             function updateNavBadge(count) {

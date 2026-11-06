@@ -7,8 +7,8 @@
     {{-- Header Banner with Action Button --}}
     <div class="my-posts-header">
         <div class="header-titles">
-            <h1 class="page-title">My Listed Animals &amp; Adoption Requests</h1>
-            <p class="page-subtitle">Manage the pets you have posted and review neighbor adoption applications.</p>
+            <h1 class="page-title my-posts-mobile-title">My Posts</h1>
+            <p class="page-subtitle">Manage your pets and review adoption requests.</p>
         </div>
         <div class="header-cta" style="display: flex; align-items: center; gap: 0.75rem;">
             @auth
@@ -57,7 +57,7 @@
                 <span class="mp-tab-count">{{ $myPets->count() }}</span>
             </button>
             <button class="mp-tab-btn" id="tab-btn-applications" onclick="switchTab('applications')" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-applications">
-                <x-lucide-heart-handshake style="width: 16px; height: 16px; stroke-width: 2;" />
+                <x-lucide-heart style="width: 16px; height: 16px; stroke-width: 2;" />
                 <span>My Applications</span>
                 <span class="mp-tab-count">{{ $myApplications->count() }}</span>
             </button>
@@ -78,7 +78,7 @@
 
                 <div class="table-card">
                     @if($myPets->count() > 0)
-                        <div class="table-responsive">
+                        <div class="table-responsive hide-on-phone">
                             <table class="kupkop-table">
                                 <thead>
                                     <tr>
@@ -94,7 +94,7 @@
                                         <tr>
                                             <td>
                                                 <div class="table-pet-thumb" onclick="openFullscreenCarouselForPet({{ json_encode($pet) }})" style="cursor: pointer;" title="Click to view photos in fullscreen carousel">
-                                                    <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}">
+                                                    <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}" loading="lazy">
                                                 </div>
                                             </td>
                                             <td>
@@ -177,6 +177,74 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        {{-- Mobile Cards for Active Posts (phone only) --}}
+                        <div class="mobile-card-list" aria-label="My active posts">
+                            @foreach($myPets as $pet)
+                                @php
+                                    $stLower = strtolower($pet->status);
+                                    $stClass = match($stLower) {
+                                        'available' => 'status-pill-available',
+                                        'pending'   => 'status-pill-pending',
+                                        'draft'     => 'status-pill-draft',
+                                        default     => 'status-pill-adopted',
+                                    };
+                                    $isAdopted = $stLower === 'adopted';
+                                @endphp
+                                <div class="mobile-pet-card">
+                                    <div class="mobile-card-top">
+                                        <div class="table-pet-thumb" onclick="openFullscreenCarouselForPet({{ json_encode($pet) }})" style="cursor: pointer; width: 64px; height: 64px; flex-shrink: 0;" title="Click to view photos">
+                                            <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; border-radius: 0.5rem;">
+                                        </div>
+                                        <div class="mobile-card-info" style="flex: 1; min-width: 0;">
+                                            <div class="mobile-card-name" style="font-weight: 700; color: #2D1810; font-size: 0.95rem;">{{ $pet->name }}</div>
+                                            <div class="mobile-card-id" style="font-size: 0.75rem; color: #8C756B;">{{ $pet->rescuer_id ?? ('#PET-' . $pet->id) }}</div>
+                                            <div class="mobile-card-details" style="font-size: 0.8rem; color: #52473D; margin-top: 0.2rem; line-height: 1.35;">
+                                                <strong>{{ $pet->species }} • {{ $pet->breed }}</strong><br>
+                                                <span class="text-muted">{{ $pet->age }} • {{ $pet->gender }}</span>
+                                            </div>
+                                        </div>
+                                        <span class="status-pill {{ $stClass }}" style="flex-shrink: 0; align-self: flex-start;">{{ $pet->status }}</span>
+                                    </div>
+                                    <div class="mobile-card-actions" style="display: flex; gap: 0.4rem; padding-top: 0.5rem; border-top: 1px solid #F3E8D8;">
+                                        <button 
+                                            type="button" 
+                                            class="btn-table-edit"
+                                            style="flex: 1; justify-content: center; height: 36px; min-width: 0;"
+                                            onclick="openEditPostModal({{ json_encode($pet) }})"
+                                        >
+                                            <x-lucide-pencil style="width: 13px; height: 13px; stroke-width: 2; margin-right: 0.25rem;" />
+                                            <span>Edit</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            class="{{ $isAdopted ? 'btn-table-revert' : 'btn-table-adopt' }}"
+                                            style="flex: 1; justify-content: center; height: 36px; min-width: 0;"
+                                            onclick="confirmToggleAdopted({{ $pet->id }}, '{{ addslashes($pet->name) }}', {{ $isAdopted ? 'true' : 'false' }})"
+                                        >
+                                            @if($isAdopted)
+                                                <x-lucide-rotate-ccw style="width: 13px; height: 13px; stroke-width: 2; margin-right: 0.25rem;" />
+                                                <span>Available</span>
+                                            @else
+                                                <x-lucide-check-circle-2 style="width: 13px; height: 13px; stroke-width: 2; margin-right: 0.25rem;" />
+                                                <span>Adopted</span>
+                                            @endif
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            class="btn-archive-icon-only"
+                                            onclick="confirmArchivePost({{ $pet->id }}, '{{ addslashes($pet->name) }}')"
+                                            title="Archive Post"
+                                            aria-label="Archive Post"
+                                        >
+                                            <x-lucide-trash-2 style="width: 15px; height: 15px; stroke-width: 2;" />
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     @else
                         <div class="empty-state-card">
                             <div class="empty-icon">
@@ -200,7 +268,7 @@
 
                 <div class="table-card">
                     @if($incomingRequests->count() > 0)
-                        <div class="table-responsive">
+                        <div class="table-responsive hide-on-phone">
                             <table class="kupkop-table">
                                 <thead>
                                     <tr>
@@ -273,6 +341,66 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        {{-- Mobile Cards for Incoming Requests (phone only) --}}
+                        <div class="mobile-card-list" aria-label="Incoming adoption requests">
+                            @foreach($incomingRequests as $req)
+                                @php
+                                    $reqStatus = strtolower($req->status);
+                                    $reqBadge = $reqStatus === 'accepted'
+                                        ? 'status-pill-available'
+                                        : ($reqStatus === 'declined' ? 'status-pill-declined' : 'status-pill-pending');
+                                    $reqInitial = strtoupper(substr($req->applicant_name ?? 'U', 0, 1));
+                                @endphp
+                                <div class="mobile-req-card">
+                                    <div class="mobile-req-top">
+                                        <div class="mobile-req-avatar">{{ $reqInitial }}</div>
+                                        <div class="mobile-req-info">
+                                            <div class="mobile-req-name">{{ $req->applicant_name }}</div>
+                                            <div class="mobile-req-pet">wants to adopt <strong>{{ $req->pet->name ?? 'Pet' }}</strong></div>
+                                        </div>
+                                    </div>
+                                    <div class="mobile-req-meta">
+                                        <span class="mobile-req-date">{{ $req->created_at->format('M d, Y') }}</span>
+                                        <span class="status-pill {{ $reqBadge }}">{{ $req->status }}</span>
+                                    </div>
+                                    <div class="mobile-req-actions" style="display: flex; flex-direction: column; gap: 0.45rem;">
+                                        @if($req->status === 'Pending')
+                                            <div style="display: flex; gap: 0.45rem;">
+                                                <form method="POST" action="{{ route('requests.status', $req->id) }}" class="inline-form" style="flex: 1; margin: 0;">
+                                                    @csrf
+                                                    @method('PATCH')
+                                                    <input type="hidden" name="status" value="Accepted">
+                                                    <button type="submit" class="btn-table-accept" style="width: 100%; justify-content: center; height: 38px; background: #3D2314; color: #ffffff; border: none; border-radius: 0.55rem; font-size: 0.88rem; font-weight: 700; display: inline-flex; align-items: center; cursor: pointer; font-family: inherit; gap: 0.35rem;">
+                                                        <x-lucide-check style="width: 14px; height: 14px; stroke-width: 2.5;" />
+                                                        <span>Accept</span>
+                                                    </button>
+                                                </form>
+                                                <button 
+                                                    type="button" 
+                                                    class="btn-table-decline" 
+                                                    style="flex: 1; justify-content: center; height: 38px; background: #ffffff; color: #4A2E2B; border: 1.5px solid #D5C2B1; border-radius: 0.55rem; font-size: 0.88rem; font-weight: 600; display: inline-flex; align-items: center; cursor: pointer; font-family: inherit; gap: 0.35rem;"
+                                                    onclick="confirmDeclineRequest({{ $req->id }}, '{{ addslashes($req->applicant_name) }}', '{{ addslashes($req->pet->name ?? 'Pet') }}')"
+                                                    title="Decline Adoption Request"
+                                                >
+                                                    <x-lucide-x style="width: 14px; height: 14px; stroke-width: 2.5;" />
+                                                    <span>Decline</span>
+                                                </button>
+                                            </div>
+                                        @endif
+                                        <button 
+                                            type="button" 
+                                            class="btn-table-message" 
+                                            style="width: 100%; justify-content: center; height: 38px; background: #FDE047; color: #2D1810; border: none; border-radius: 0.55rem; font-size: 0.88rem; font-weight: 700; display: inline-flex; align-items: center; cursor: pointer; font-family: inherit; gap: 0.4rem;"
+                                            onclick="window.location.href = '{{ route('messages') }}?recipient={{ urlencode($req->applicant_name) }}&recipient_id={{ $req->user_id }}&pet={{ urlencode($req->pet->name ?? 'Pet') }}&pet_id={{ $req->pet_id }}'"
+                                        >
+                                            <x-lucide-message-square style="width: 14px; height: 14px; stroke-width: 2.2;" />
+                                            <span>Message</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     @else
                         <div class="empty-state-card">
                             <div class="empty-icon">
@@ -295,7 +423,7 @@
 
                 <div class="table-card">
                     @if($myApplications->count() > 0)
-                        <div class="table-responsive">
+                        <div class="table-responsive hide-on-phone">
                             <table class="kupkop-table">
                                 <thead>
                                     <tr>
@@ -313,7 +441,7 @@
                                             <td>
                                                 <div style="display: flex; align-items: center; gap: 0.75rem;">
                                                     @if($app->pet && $app->pet->image_path)
-                                                        <img src="{{ $app->pet->image_url }}" alt="{{ $app->pet->name }}" style="width: 44px; height: 44px; border-radius: 0.5rem; object-fit: cover; flex-shrink: 0;" />
+                                                        <img src="{{ $app->pet->image_url }}" alt="{{ $app->pet->name }}" loading="lazy" style="width: 44px; height: 44px; border-radius: 0.5rem; object-fit: cover; flex-shrink: 0;" />
                                                     @endif
                                                     <div>
                                                         <strong style="font-size: 1rem; color: var(--brand-dark-brown);">{{ $app->pet->name ?? 'Pet' }}</strong>
@@ -379,6 +507,73 @@
                                 </tbody>
                             </table>
                         </div>
+
+                        {{-- Mobile Cards for My Applications (phone only) --}}
+                        <div class="mobile-card-list" aria-label="My applications">
+                            @foreach($myApplications as $app)
+                                @php
+                                    $appStatus = strtolower($app->status);
+                                    $badgeClass = $appStatus === 'accepted' 
+                                        ? 'status-pill-available' 
+                                        : ($appStatus === 'declined' ? 'status-pill-declined' : ($appStatus === 'cancelled' ? 'status-pill-draft' : 'status-pill-pending'));
+                                @endphp
+                                <div class="mobile-app-card">
+                                    <div class="mobile-card-top">
+                                        @if($app->pet && $app->pet->image_path)
+                                            <img src="{{ $app->pet->image_url }}" alt="{{ $app->pet->name }}" loading="lazy" class="mobile-card-thumb" style="width: 56px; height: 56px; border-radius: 0.5rem; object-fit: cover;">
+                                        @endif
+                                        <div class="mobile-card-info" style="flex: 1; min-width: 0;">
+                                            <div class="mobile-card-name" style="font-weight: 700; color: #2D1810; font-size: 0.95rem;">{{ $app->pet->name ?? 'Pet' }}</div>
+                                            <div class="mobile-card-details" style="font-size: 0.8rem; color: #52473D; margin-top: 0.2rem;">
+                                                <span>{{ $app->pet->species ?? '' }} • {{ $app->pet->breed ?? '' }}</span><br>
+                                                <span class="text-muted">Rescuer: {{ $app->pet->posted_by ?? 'Rescuer' }}</span>
+                                            </div>
+                                        </div>
+                                        <span class="status-pill {{ $badgeClass }}" style="flex-shrink: 0; align-self: flex-start;">{{ $app->status }}</span>
+                                    </div>
+                                    <div style="font-size: 0.78rem; color: #8C756B; display: flex; justify-content: space-between; align-items: center;">
+                                        <span>Submitted: {{ $app->created_at->format('M d, Y') }}</span>
+                                        <span>{{ $app->barangay }}</span>
+                                    </div>
+                                    <div class="mobile-card-actions" style="display: flex; gap: 0.4rem; padding-top: 0.5rem; border-top: 1px solid #F3E8D8;">
+                                        @if($app->pet && $app->pet->user_id)
+                                            <button 
+                                                type="button" 
+                                                class="btn-table-message"
+                                                style="flex: 1; justify-content: center; height: 36px;"
+                                                onclick="window.location.href = '{{ route('messages') }}?recipient={{ urlencode($app->pet->posted_by ?? 'Rescuer') }}&recipient_id={{ $app->pet->user_id }}&pet={{ urlencode($app->pet->name ?? 'Pet') }}&pet_id={{ $app->pet_id }}'"
+                                            >
+                                                <x-lucide-message-square style="width: 13px; height: 13px; stroke-width: 2.2; margin-right: 0.2rem;" />
+                                                <span>Message</span>
+                                            </button>
+                                        @endif
+                                        @if($app->status === 'Pending')
+                                            <button 
+                                                type="button" 
+                                                class="btn-table-decline"
+                                                style="flex: 1; justify-content: center; height: 36px;"
+                                                onclick="confirmCancelRequest({{ $app->id }}, '{{ addslashes($app->pet->name ?? 'this pet') }}')"
+                                                title="Cancel Adoption Request"
+                                            >
+                                                <x-lucide-x style="width: 13px; height: 13px; stroke-width: 2.2; margin-right: 0.2rem;" />
+                                                <span>Cancel</span>
+                                            </button>
+                                        @elseif(in_array($app->status, ['Declined', 'Cancelled']))
+                                            <button 
+                                                type="button" 
+                                                class="btn-table-delete"
+                                                style="flex: 1; justify-content: center; height: 36px;"
+                                                onclick="confirmDeleteApplication({{ $app->id }}, '{{ addslashes($app->pet->name ?? 'this pet') }}')"
+                                                title="Delete Application Record"
+                                            >
+                                                <x-lucide-trash-2 style="width: 13px; height: 13px; stroke-width: 2; margin-right: 0.25rem;" />
+                                                <span>Delete</span>
+                                            </button>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
                     @else
                         <div class="empty-state-card">
                             <div class="empty-icon">
@@ -406,7 +601,7 @@
                 </div>
                 <div class="table-card">
                     @if($archivedPets->count() > 0)
-                        <div class="table-responsive">
+                        <div class="table-responsive hide-on-phone">
                             <table class="kupkop-table">
                                 <thead>
                                     <tr>
@@ -422,7 +617,7 @@
                                         <tr>
                                             <td>
                                                 <div class="table-pet-thumb" onclick="openFullscreenCarouselForPet({{ json_encode($pet) }})" style="cursor: pointer;" title="Click to view photos in fullscreen carousel">
-                                                    <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}">
+                                                    <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}" loading="lazy">
                                                 </div>
                                             </td>
                                             <td>
@@ -470,6 +665,49 @@
                                     @endforeach
                                 </tbody>
                             </table>
+                        </div>
+
+                        {{-- Mobile Cards for Archived Posts (phone only) --}}
+                        <div class="mobile-card-list" aria-label="Archived posts">
+                            @foreach($archivedPets as $pet)
+                                <div class="mobile-pet-card">
+                                    <div class="mobile-card-top">
+                                        <div class="table-pet-thumb" onclick="openFullscreenCarouselForPet({{ json_encode($pet) }})" style="cursor: pointer; width: 64px; height: 64px; flex-shrink: 0;" title="Click to view photos">
+                                            <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; border-radius: 0.5rem;">
+                                        </div>
+                                        <div class="mobile-card-info" style="flex: 1; min-width: 0;">
+                                            <div class="mobile-card-name" style="font-weight: 700; color: #2D1810; font-size: 0.95rem;">{{ $pet->name }}</div>
+                                            <div class="mobile-card-id" style="font-size: 0.75rem; color: #8C756B;">{{ $pet->rescuer_id ?? ('#PET-' . $pet->id) }}</div>
+                                            <div class="mobile-card-details" style="font-size: 0.8rem; color: #52473D; margin-top: 0.2rem; line-height: 1.35;">
+                                                <strong>{{ $pet->species }} • {{ $pet->breed }}</strong><br>
+                                                <span class="text-muted">{{ $pet->age }} • {{ $pet->gender }}</span><br>
+                                                <span class="text-muted" style="font-size: 0.75rem;">Archived: {{ $pet->archived_at->format('M d, Y') }}</span>
+                                            </div>
+                                        </div>
+                                        <span class="badge-archived" style="flex-shrink: 0; align-self: flex-start; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: #F3F4F6; color: #4B5563;">Archived</span>
+                                    </div>
+                                    <div class="mobile-card-actions" style="display: flex; gap: 0.4rem; padding-top: 0.5rem; border-top: 1px solid #F3E8D8;">
+                                        <form method="POST" action="{{ route('posts.restore', $pet->id) }}" class="inline-form" style="flex: 1; display: contents;">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn-table-restore" style="flex: 1; justify-content: center; height: 36px;" title="Restore Post">
+                                                <x-lucide-rotate-ccw style="width: 13px; height: 13px; stroke-width: 2.2; margin-right: 0.25rem;" />
+                                                <span>Restore</span>
+                                            </button>
+                                        </form>
+                                        <button
+                                            type="button"
+                                            class="btn-table-delete"
+                                            style="flex: 1; justify-content: center; height: 36px;"
+                                            onclick="confirmPermanentDelete({{ $pet->id }}, '{{ addslashes($pet->name) }}')"
+                                            title="Delete Permanently"
+                                        >
+                                            <x-lucide-trash-2 style="width: 13px; height: 13px; stroke-width: 2; margin-right: 0.25rem;" />
+                                            <span>Delete Permanently</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
                     @else
                         <div class="empty-state-card">
@@ -555,7 +793,7 @@
                     {{-- Multi-image preview container (Cleaned up, organized, and uncluttered) --}}
                     <div id="image-preview-box" class="multi-image-preview-container" style="display: none; width: 100%;">
                         <div class="preview-main-frame">
-                            <img id="image-preview" src="" alt="Photo Preview">
+                            <img id="image-preview" src="" alt="Photo Preview" loading="lazy">
                         </div>
                         <div id="preview-thumbnails-grid" class="preview-thumbnails-grid"></div>
                         <div class="preview-actions-bar">
@@ -923,7 +1161,7 @@
                             <div style="display: flex; align-items: center; gap: 1rem; min-width: 0;">
                                 <div style="width: 58px; height: 58px; border-radius: 0.6rem; overflow: hidden; background: #EAE0D5; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid #D5C2B1;">
                                     @if(!empty($draft->image_path))
-                                        <img src="{{ $draft->image_url }}" alt="{{ $draft->name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                        <img src="{{ $draft->image_url }}" alt="{{ $draft->name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
                                     @else
                                         <x-lucide-paw-print style="width: 26px; height: 26px; stroke-width: 1.6; color: #8C756B; opacity: 0.7;" />
                                     @endif
@@ -1439,7 +1677,7 @@
                     >
                     <div id="edit-image-preview-box" class="multi-image-preview-container" style="display: none; width: 100%;">
                         <div class="preview-main-frame">
-                            <img id="edit-image-preview" src="" alt="Photo Preview">
+                            <img id="edit-image-preview" src="" alt="Photo Preview" loading="lazy">
                         </div>
                         <div id="edit-preview-thumbnails-grid" class="preview-thumbnails-grid"></div>
                         <div class="preview-actions-bar">
@@ -2842,7 +3080,7 @@
         </button>
 
         <div class="fs-carousel-slide-box">
-            <img id="pet-fullscreen-img" src="" alt="Full screen pet photo" class="fullscreen-img fs-carousel-img">
+            <img id="pet-fullscreen-img" src="" alt="Full screen pet photo" class="fullscreen-img fs-carousel-img" loading="lazy">
         </div>
 
         <button 

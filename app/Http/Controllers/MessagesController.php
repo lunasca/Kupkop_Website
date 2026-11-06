@@ -27,7 +27,17 @@ class MessagesController extends Controller
 
         // 1. Fetch all messages involving the authenticated user in chronological order.
         //    Exclude messages the current user has "deleted for me" using the visibleTo scope.
-        $allMessages = Message::with(['sender', 'receiver', 'pet'])
+        $allMessages = Message::select([
+                'id', 'sender_id', 'receiver_id', 'pet_id', 'subject', 'message',
+                'is_read', 'created_at', 'conv_deleted_by_sender_at',
+                'conv_deleted_by_receiver_at', 'deleted_by_sender', 'deleted_by_receiver',
+                'deleted_for_everyone', 'edited_at'
+            ])
+            ->with([
+                'sender:id,name',
+                'receiver:id,name',
+                'pet:id,name,species,image_path'
+            ])
             ->where(function ($q) use ($authId) {
                 $q->where('sender_id', $authId)
                   ->orWhere('receiver_id', $authId);
@@ -337,7 +347,11 @@ class MessagesController extends Controller
             ->selectRaw('MAX(CASE WHEN sender_id = ? THEN conv_deleted_by_sender_at ELSE conv_deleted_by_receiver_at END) as deleted_at', [$authId])
             ->value('deleted_at');
 
-        $query = Message::with(['sender'])
+        $query = Message::select([
+                'id', 'sender_id', 'receiver_id', 'message', 'is_read', 'created_at',
+                'deleted_for_everyone', 'edited_at'
+            ])
+            ->with(['sender:id,name'])
             ->where(function ($q) use ($authId, $partnerId) {
                 $q->where(function ($inner) use ($authId, $partnerId) {
                     $inner->where('sender_id', $authId)->where('receiver_id', $partnerId);

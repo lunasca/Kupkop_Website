@@ -14,10 +14,12 @@
     {{-- Top Tabs with Badge Counts --}}
     <div class="posts-tabs-row">
         <a href="{{ route('admin.posts', array_merge(request()->except(['tab', 'page']), ['tab' => 'all'])) }}" class="tab-pill {{ $tab === 'all' ? 'active' : '' }}">
+            <x-lucide-paw-print style="width: 16px; height: 16px; stroke-width: 2.2;" />
             <span>All posts</span>
             <span class="tab-badge">{{ $allCount }}</span>
         </a>
         <a href="{{ route('admin.posts', array_merge(request()->except(['tab', 'page']), ['tab' => 'archive'])) }}" class="tab-pill {{ $tab === 'archive' ? 'active' : '' }}">
+            <x-lucide-archive style="width: 16px; height: 16px; stroke-width: 2.2;" />
             <span>Archive</span>
             <span class="tab-badge">{{ $archiveCount }}</span>
         </a>
@@ -132,7 +134,7 @@
                                     <div class="pet-cell">
                                         <div class="pet-avatar-box {{ $isCat ? 'avatar-cat' : 'avatar-dog' }}" style="position: relative;">
                                             @if($pet->image_path)
-                                                <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}">
+                                                <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}" loading="lazy">
                                                 @php $extraCount = count($pet->image_urls) - 1; @endphp
                                                 @if($extraCount > 0)
                                                     <span class="pet-photos-badge" title="{{ count($pet->image_urls) }} photos uploaded" style="position: absolute; bottom: 3px; right: 3px; background: rgba(45, 24, 16, 0.88); color: #fff; font-size: 0.65rem; font-weight: 700; padding: 1px 4px; border-radius: 4px; line-height: 1.2; display: inline-flex; align-items: center; gap: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.35);">
@@ -261,6 +263,124 @@
                         @endforeach
                     </tbody>
                 </table>
+
+                {{-- Mobile Cards for Posts (phone only) --}}
+                <div class="admin-mobile-cards" aria-label="Admin posts cards">
+                    @foreach($pets as $pet)
+                        @php
+                            $speciesLower = strtolower(trim($pet->species));
+                            $isDog = str_contains($speciesLower, 'dog');
+                            $isCat = str_contains($speciesLower, 'cat');
+                            $formattedId = $pet->formatted_id;
+                            $statusLower = strtolower(trim($pet->status));
+                        @endphp
+                        <div class="admin-pet-card">
+                            <div class="admin-card-top">
+                                <div class="admin-card-thumb">
+                                    @if($pet->image_path)
+                                        <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}" loading="lazy">
+                                    @else
+                                        @if($isCat)
+                                            <x-lucide-cat style="width: 24px; height: 24px;" />
+                                        @else
+                                            <x-lucide-dog style="width: 24px; height: 24px;" />
+                                        @endif
+                                    @endif
+                                </div>
+                                <div class="admin-card-info">
+                                    <div class="admin-card-name">{{ $pet->name }}</div>
+                                    <div class="admin-card-id">{{ $formattedId }}</div>
+                                    <div class="admin-card-details">
+                                        {{ ucfirst($pet->species) }} · {{ $pet->breed ?? 'Unknown' }}<br>
+                                        {{ $pet->age }} · {{ ucfirst($pet->gender) }} · {{ $pet->location ?? 'Brgy. 176-F' }}
+                                    </div>
+                                    <div class="admin-card-owner" style="margin-top: 0.25rem; font-size: 0.78rem; color: #71655B;">
+                                        Posted by: <strong>{{ $pet->posted_by ?? ($pet->user->name ?? 'Community Member') }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="admin-card-badges">
+                                @if($tab === 'archive')
+                                    <span class="badge-archived">Archived</span>
+                                @else
+                                    @if($pet->is_verified)
+                                        <span class="badge-verified">Verified</span>
+                                    @else
+                                        <span class="badge-unverified">Unverified</span>
+                                    @endif
+
+                                    @if($statusLower === 'available')
+                                        <span class="badge-available">Available</span>
+                                    @elseif($statusLower === 'pending')
+                                        <span class="badge-pending">Pending</span>
+                                    @elseif($statusLower === 'adopted')
+                                        <span class="badge-adopted">Adopted</span>
+                                    @else
+                                        <span class="badge-available">{{ ucfirst($pet->status) }}</span>
+                                    @endif
+                                @endif
+                            </div>
+
+                            <div class="admin-card-actions">
+                                @if($tab === 'archive')
+                                    <button
+                                        type="button"
+                                        class="btn-action-restore"
+                                        onclick="openRestoreModal({{ $pet->id }}, '{{ addslashes($pet->name) }}')"
+                                    >
+                                        Restore
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn-action-delete"
+                                        onclick="openDeletePermanentModal({{ $pet->id }}, '{{ addslashes($pet->name) }}')"
+                                    >
+                                        Delete permanently
+                                    </button>
+                                @else
+                                    <button
+                                        type="button"
+                                        class="btn-action-view"
+                                        onclick="openVerifyModal({{ json_encode([
+                                            'id' => $pet->id,
+                                            'name' => $pet->name,
+                                            'formatted_id' => $formattedId,
+                                            'species' => ucfirst($pet->species),
+                                            'breed' => $pet->breed ?? 'Unknown',
+                                            'age' => $pet->age,
+                                            'gender' => ucfirst($pet->gender),
+                                            'location' => $pet->location ?? 'Brgy. 176-F',
+                                            'posted_by' => $pet->posted_by ?? ($pet->user->name ?? 'Community Member'),
+                                            'is_verified' => (bool)$pet->is_verified,
+                                            'status' => ucfirst($pet->status),
+                                            'image_url' => $pet->image_url,
+                                            'image_urls' => $pet->image_urls,
+                                            'has_image' => !empty($pet->image_path),
+                                            'is_cat' => $isCat,
+                                        ]) }})"
+                                    >
+                                        View & verify
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="btn-action-remove"
+                                        onclick="openArchiveModal({{ $pet->id }}, '{{ addslashes($pet->name) }}')"
+                                    >
+                                        Remove
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+
+                {{-- Pagination Links --}}
+                @if(method_exists($pets, 'hasPages') && $pets->hasPages())
+                    <div class="admin-pagination-wrapper" style="padding: 1.25rem; display: flex; justify-content: center;">
+                        {{ $pets->links() }}
+                    </div>
+                @endif
             </div>
         @endif
     </div>
@@ -307,7 +427,7 @@
             onkeydown="if(event.key==='Enter'||event.key===' '){openAdminFullscreenImage();event.preventDefault();}"
             style="position: relative; cursor: pointer;"
         >
-            <img id="vm-img" src="" alt="Pet photo" style="display: none;">
+            <img id="vm-img" src="" alt="Pet photo" style="display: none;" loading="lazy">
             <div id="vm-img-fallback" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%;">
                 <x-lucide-dog id="vm-dog-icon" style="width: 80px; height: 80px; color: #D97706;" />
                 <x-lucide-cat id="vm-cat-icon" style="width: 80px; height: 80px; color: #0284C7; display: none;" />
@@ -599,7 +719,7 @@
 
         {{-- Centered Image Stage --}}
         <div class="fs-carousel-slide-box">
-            <img id="admin-pet-fullscreen-img" src="" alt="Full screen pet photo" class="fullscreen-img fs-carousel-img">
+            <img id="admin-pet-fullscreen-img" src="" alt="Full screen pet photo" class="fullscreen-img fs-carousel-img" loading="lazy">
         </div>
 
         {{-- Next Arrow Button --}}

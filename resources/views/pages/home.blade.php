@@ -6,25 +6,30 @@
 {{-- 1. Hero Section --}}
 <section class="hero-section">
     <div class="site-container hero-content">
-        @auth
-            {{-- Auth greeting horizontally aligned with right-side "+" Create Post button (users) or summary stat counters (admin) --}}
-            <div class="hero-welcome-row">
-                <div class="hero-auth-greeting">
+        {{-- Welcome Greeting Row with Shelter Summary Statistics Counters --}}
+        <div class="hero-welcome-row">
+            <div class="hero-auth-greeting">
+                @auth
                     <h1 class="page-title hero-greeting-title">Welcome, {{ Auth::user()->name }}!</h1>
                     <p class="page-subtitle hero-greeting-sub">Meet rescued aspins, puspins, and pets ready for adoption in Brgy.&nbsp;176&#8209;F.</p>
-                </div>
+                @else
+                    <h1 class="page-title hero-greeting-title">Adopt a rescued dog or cat in <span class="text-nowrap">Brgy.&nbsp;176&#8209;F.</span></h1>
+                    <p class="page-subtitle hero-greeting-sub">Connecting rescued pets with loving homes in Brgy.&nbsp;176&#8209;F.</p>
+                @endauth
+            </div>
+            @auth
                 @if(Auth::user()->is_admin)
                     <div class="hero-admin-stats-widget" role="region" aria-label="Shelter Summary Stats">
                         <div class="admin-stat-card">
-                            <span class="admin-stat-number">{{ $adminStats['total_listed'] ?? 0 }}</span>
+                            <span class="admin-stat-number">{{ $adminStats['total_listed'] ?? $statusCounts['all'] ?? 0 }}</span>
                             <span class="admin-stat-label">Pets listed</span>
                         </div>
                         <div class="admin-stat-card">
-                            <span class="admin-stat-number">{{ $adminStats['available'] ?? 0 }}</span>
+                            <span class="admin-stat-number">{{ $adminStats['available'] ?? $statusCounts['available'] ?? 0 }}</span>
                             <span class="admin-stat-label">Available</span>
                         </div>
                         <div class="admin-stat-card">
-                            <span class="admin-stat-number">{{ $adminStats['pending'] ?? 0 }}</span>
+                            <span class="admin-stat-number">{{ $adminStats['pending'] ?? $statusCounts['pending'] ?? 0 }}</span>
                             <span class="admin-stat-label">Pending</span>
                         </div>
                     </div>
@@ -39,14 +44,8 @@
                         <x-lucide-plus class="hero-create-icon" />
                     </button>
                 @endif
-            </div>
-        @else
-            {{-- Guest greeting: same layout above the card, left-aligned --}}
-            <div class="hero-auth-greeting">
-                <h1 class="page-title hero-greeting-title">Adopt a rescued dog or cat in <span class="text-nowrap">Brgy.&nbsp;176&#8209;F.</span></h1>
-                <p class="page-subtitle hero-greeting-sub">Connecting rescued pets with loving homes in Brgy.&nbsp;176&#8209;F.</p>
-            </div>
-        @endauth
+            @endauth
+        </div>
 
         {{-- 2. Search & Filter Bar --}}
         <div class="search-filter-card">
@@ -196,6 +195,84 @@
                         <span>Reset</span>
                     </a>
                 </div>
+
+                {{-- Mobile: Filter toggle button (phone only, hidden on tablet+) --}}
+                @php
+                    $activeFilterCount = collect([request('species'), request('breed'), request('age'), request('gender')])->filter()->count();
+                @endphp
+                <button type="button" class="mobile-filter-btn" id="mobileFilterBtn" onclick="openFilterSheet()" aria-label="Open filters">
+                    <x-lucide-sliders-horizontal style="width: 16px; height: 16px; stroke-width: 2.2;" />
+                    @if($activeFilterCount > 0)
+                        <span class="mobile-filter-badge" id="filterBadgeCount">{{ $activeFilterCount }}</span>
+                    @endif
+                </button>
+            </form>
+        </div>
+
+        {{-- Mobile Filter Bottom Sheet (phone only) --}}
+        <div class="filter-sheet-backdrop" id="filterSheetBackdrop" onclick="closeFilterSheet()"></div>
+        <div class="filter-bottom-sheet" id="filterBottomSheet" role="dialog" aria-modal="true" aria-label="Filter pets">
+            <div class="filter-sheet-handle"></div>
+            <div class="filter-sheet-header">
+                <span class="filter-sheet-title-text">Filters</span>
+                <button type="button" class="filter-sheet-reset-link" onclick="resetFilterSheet()">Reset</button>
+            </div>
+            <form action="{{ route('home') }}" method="GET" id="mobile-filter-form">
+                <input type="hidden" name="status" value="{{ request('status', 'all') }}">
+                @if(request('keyword'))
+                    <input type="hidden" name="keyword" value="{{ request('keyword') }}">
+                @endif
+                {{-- Hidden inputs that get updated by chip selections --}}
+                <input type="hidden" name="species" id="sheet-species-val" value="{{ request('species', '') }}">
+                <input type="hidden" name="age" id="sheet-age-val" value="{{ request('age', '') }}">
+                <input type="hidden" name="gender" id="sheet-gender-val" value="{{ request('gender', '') }}">
+                <input type="hidden" name="breed" id="sheet-breed-val" value="{{ request('breed', '') }}">
+
+                {{-- SPECIES chips --}}
+                <div class="filter-sheet-chip-group">
+                    <div class="filter-sheet-chip-label">SPECIES</div>
+                    <div class="filter-sheet-chips">
+                        <button type="button" class="filter-chip {{ !request('species') ? 'active' : '' }}" data-filter="species" data-value="">All</button>
+                        <button type="button" class="filter-chip {{ request('species') == 'dog' ? 'active' : '' }}" data-filter="species" data-value="dog">Dog</button>
+                        <button type="button" class="filter-chip {{ request('species') == 'cat' ? 'active' : '' }}" data-filter="species" data-value="cat">Cat</button>
+                    </div>
+                </div>
+
+                {{-- AGE chips --}}
+                <div class="filter-sheet-chip-group">
+                    <div class="filter-sheet-chip-label">AGE</div>
+                    <div class="filter-sheet-chips">
+                        <button type="button" class="filter-chip {{ !request('age') ? 'active' : '' }}" data-filter="age" data-value="">Any</button>
+                        <button type="button" class="filter-chip {{ request('age') == 'puppy_kitten' ? 'active' : '' }}" data-filter="age" data-value="puppy_kitten">Under 1 yr</button>
+                        <button type="button" class="filter-chip {{ (request('age') == 'junior' || request('age') == 'young') ? 'active' : '' }}" data-filter="age" data-value="junior">1–3 yrs</button>
+                        <button type="button" class="filter-chip {{ request('age') == 'adult' ? 'active' : '' }}" data-filter="age" data-value="adult">4+ yrs</button>
+                    </div>
+                </div>
+
+                {{-- GENDER chips --}}
+                <div class="filter-sheet-chip-group">
+                    <div class="filter-sheet-chip-label">GENDER</div>
+                    <div class="filter-sheet-chips">
+                        <button type="button" class="filter-chip {{ !request('gender') ? 'active' : '' }}" data-filter="gender" data-value="">All</button>
+                        <button type="button" class="filter-chip {{ request('gender') == 'male' ? 'active' : '' }}" data-filter="gender" data-value="male">Male</button>
+                        <button type="button" class="filter-chip {{ request('gender') == 'female' ? 'active' : '' }}" data-filter="gender" data-value="female">Female</button>
+                    </div>
+                </div>
+
+                {{-- BREED dropdown (styled select) --}}
+                <div class="filter-sheet-chip-group">
+                    <div class="filter-sheet-chip-label">BREED</div>
+                    <select name="breed" id="sheet-breed" class="filter-sheet-select filter-sheet-breed-select">
+                        <option value="">Any breed</option>
+                        <option value="aspin" {{ request('breed') == 'aspin' ? 'selected' : '' }}>Aspin</option>
+                        <option value="puspin" {{ request('breed') == 'puspin' ? 'selected' : '' }}>Puspin</option>
+                        <option value="mix" {{ request('breed') == 'mix' ? 'selected' : '' }}>Mix Breed</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="filter-sheet-apply" id="filterSheetApplyBtn">
+                    Show {{ $pets->count() }} pets
+                </button>
             </form>
         </div>
 
@@ -214,6 +291,10 @@
                 <button type="button" class="home-status-pill {{ $currStatus === 'pending' ? 'active' : '' }}" onclick="setHomeStatus('pending')">
                     <span>Pending</span>
                     <span class="home-status-badge">{{ $statusCounts['pending'] ?? 0 }}</span>
+                </button>
+                <button type="button" class="home-status-pill {{ $currStatus === 'adopted' ? 'active' : '' }}" onclick="setHomeStatus('adopted')">
+                    <span>Adopted</span>
+                    <span class="home-status-badge">{{ $statusCounts['adopted'] ?? 0 }}</span>
                 </button>
                 <button type="button" class="home-status-pill {{ $currStatus === 'verified' ? 'active' : '' }}" onclick="setHomeStatus('verified')">
                     <span>Verified</span>
@@ -310,7 +391,7 @@
                         tabindex="0"
                         onkeydown="if(event.key==='Enter'||event.key===' '){openFullscreenImage();event.preventDefault();}"
                     >
-                        <img id="modal-pet-image" src="" alt="Pet Photo" class="pet-frame-image">
+                        <img id="modal-pet-image" src="" alt="Pet Photo" class="pet-frame-image" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80';">
                         
                         {{-- Cycle Arrows (visible when pet has multiple photos) --}}
                         <button 
@@ -511,7 +592,7 @@
 
         {{-- Centered Image Stage --}}
         <div class="fs-carousel-slide-box">
-            <img id="pet-fullscreen-img" src="" alt="Full screen pet photo" class="fullscreen-img fs-carousel-img">
+            <img id="pet-fullscreen-img" src="" alt="Full screen pet photo" class="fullscreen-img fs-carousel-img" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=1200&q=80';">
         </div>
 
         {{-- Next Arrow Button --}}
@@ -578,7 +659,7 @@
 
         {{-- Pet Summary Card --}}
         <div style="display: flex; align-items: center; gap: 1rem; background: #FAF5EE; border: 1px solid #EADDCF; border-radius: 1rem; padding: 0.9rem 1.15rem; margin-bottom: 1.25rem;">
-            <img id="adopt-summary-img" src="" alt="Pet" style="width: 68px; height: 68px; border-radius: 0.75rem; object-fit: cover; border: 1px solid #D5C2B1; flex-shrink: 0;" />
+            <img id="adopt-summary-img" src="" alt="Pet" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80';" style="width: 68px; height: 68px; border-radius: 0.75rem; object-fit: cover; border: 1px solid #D5C2B1; flex-shrink: 0;" />
             <div style="flex: 1; min-width: 0;">
                 <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                     <h3 id="adopt-summary-name" style="font-size: 1.15rem; font-weight: 800; color: #4A2E2B; margin: 0;"></h3>
@@ -709,19 +790,34 @@
 </div>
 @endauth
 
+{{-- Floating Create Post Button (Regular users only, Home page only) --}}
+@auth
+    @if(!Auth::user()->is_admin)
+        <button 
+            type="button" 
+            class="floating-create-post-btn" 
+            onclick="openCreatePostModal()" 
+            title="Create Post" 
+            aria-label="Create post"
+            id="floatingCreatePostBtn"
+        >
+            <x-lucide-plus class="floating-create-post-icon" />
+        </button>
+    @endif
+@endauth
+
 {{-- 6. Create Post Modal (Post a Rescued Animal for Adoption) --}}
 <x-create-post-modal />
 
 {{-- Pass Dynamic Pet Data into JavaScript --}}
 @php
-    // Pre-load current user's pending request pet IDs for efficient lookup
-    $myPendingPetIds = [];
-    if (Auth::check()) {
-        $myPendingPetIds = \App\Models\AdoptionRequest::where('user_id', Auth::id())
+    // Use controller-passed pending request IDs or fallback query for user lookup
+    $myPendingPetIds = $myPendingPetIds ?? (Auth::check()
+        ? \App\Models\AdoptionRequest::where('user_id', Auth::id())
             ->where('status', 'Pending')
             ->pluck('pet_id')
-            ->all();
-    }
+            ->all()
+        : []);
 
     $petsJson = $pets->map(function($p) use ($myPendingPetIds) {
         return [
@@ -759,6 +855,22 @@
     let activePetRecord = null;
     let activeGallery = [];
     let activeGalleryIndex = 0;
+
+    window.switchCardPhoto = function(event, petId, targetIndex) {
+        if (event) event.stopPropagation();
+        const slides = document.querySelectorAll('.pet-card-slide-' + petId);
+        slides.forEach(function(slide, idx) {
+            slide.style.display = (idx === targetIndex) ? 'block' : 'none';
+        });
+        const dots = document.querySelectorAll('.card-dot-' + petId);
+        dots.forEach(function(dot, idx) {
+            if (idx === targetIndex) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+    };
 
     function openPetModal(petId) {
         const pet = kupkopPetsData.find(p => p.id === petId);
@@ -868,9 +980,17 @@
 
     function renderModalGallery() {
         if (!activeGallery || activeGallery.length === 0) return;
+        const fallbackUrl = (activePetRecord && (activePetRecord.species || '').toLowerCase() === 'cat')
+            ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80'
+            : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=800&q=80';
+
         const mainImg = document.getElementById('modal-pet-image');
         if (mainImg) {
-            mainImg.src = activeGallery[activeGalleryIndex];
+            mainImg.onerror = function() {
+                this.onerror = null;
+                this.src = fallbackUrl;
+            };
+            mainImg.src = activeGallery[activeGalleryIndex] || fallbackUrl;
             mainImg.alt = activePetRecord ? activePetRecord.name : 'Pet Photo';
         }
 
@@ -905,6 +1025,10 @@
                     };
 
                     const img = document.createElement('img');
+                    img.onerror = function() {
+                        this.onerror = null;
+                        this.src = fallbackUrl;
+                    };
                     img.src = url;
                     img.alt = 'Thumbnail ' + (idx + 1);
                     thumb.appendChild(img);
@@ -977,6 +1101,13 @@
             fsImg.classList.remove('fade-in');
             // Trigger browser reflow to restart fade animation
             void fsImg.offsetWidth;
+            const fallbackFs = (activePetRecord && (activePetRecord.species || '').toLowerCase() === 'cat')
+                ? 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=1200&q=80'
+                : 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=1200&q=80';
+            fsImg.onerror = function() {
+                this.onerror = null;
+                this.src = fallbackFs;
+            };
             fsImg.src = currentSrc;
             fsImg.alt = (activePetRecord ? activePetRecord.name : 'Pet') + ' - Photo ' + (activeGalleryIndex + 1);
             fsImg.classList.add('fade-in');
@@ -1009,6 +1140,10 @@
                     };
 
                     const img = document.createElement('img');
+                    img.onerror = function() {
+                        this.onerror = null;
+                        this.src = fallbackUrl;
+                    };
                     img.src = url;
                     img.alt = 'Thumbnail ' + (idx + 1);
                     thumbBtn.appendChild(img);
@@ -1208,7 +1343,16 @@
         window.location.href = "{{ route('messages') }}?" + params.toString();
     }
 
+    // Scroll pet cards container to top
+    function scrollPetGridToTop() {
+        const petContainer = document.querySelector('.pets-section .site-container') || document.querySelector('.pets-section') || document.getElementById('pets');
+        if (petContainer) {
+            petContainer.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    }
+
     function setHomeStatus(status) {
+        scrollPetGridToTop();
         const input = document.getElementById('filter-status-input');
         const form = document.getElementById('filter-form');
         if (input && form) {
@@ -1367,9 +1511,61 @@
                     if (metaCountEl) {
                         metaCountEl.textContent = `Showing ${visibleCount} pet${visibleCount === 1 ? '' : 's'}`;
                     }
+                    scrollPetGridToTop();
                 }, 250);
             });
         }
+    });
+
+    // ── Mobile Filter Bottom Sheet ──────────────────────────────────────
+    function openFilterSheet() {
+        const sheet = document.getElementById('filterBottomSheet');
+        const backdrop = document.getElementById('filterSheetBackdrop');
+        if (sheet) sheet.classList.add('open');
+        if (backdrop) backdrop.classList.add('active');
+        document.body.classList.add('sheet-open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeFilterSheet() {
+        const sheet = document.getElementById('filterBottomSheet');
+        const backdrop = document.getElementById('filterSheetBackdrop');
+        if (sheet) sheet.classList.remove('open');
+        if (backdrop) backdrop.classList.remove('active');
+        document.body.classList.remove('sheet-open');
+        document.body.style.overflow = '';
+    }
+    function resetFilterSheet() {
+        // Reset hidden inputs
+        ['sheet-species-val', 'sheet-age-val', 'sheet-gender-val'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        // Reset breed select
+        const breedSelect = document.getElementById('sheet-breed');
+        if (breedSelect) breedSelect.selectedIndex = 0;
+        // Reset all chip active states
+        document.querySelectorAll('#filterBottomSheet .filter-chip').forEach(chip => {
+            const filter = chip.dataset.filter;
+            chip.classList.toggle('active', chip.dataset.value === '');
+        });
+    }
+    // Close sheet on Escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeFilterSheet();
+    });
+    // Chip button interactions for filter bottom sheet
+    document.querySelectorAll('#filterBottomSheet .filter-chip').forEach(function(chip) {
+        chip.addEventListener('click', function() {
+            const filter = this.dataset.filter;
+            const value = this.dataset.value;
+            // Deactivate siblings
+            document.querySelectorAll('#filterBottomSheet .filter-chip[data-filter="' + filter + '"]').forEach(c => c.classList.remove('active'));
+            // Activate this chip
+            this.classList.add('active');
+            // Update hidden input
+            const hiddenInput = document.getElementById('sheet-' + filter + '-val');
+            if (hiddenInput) hiddenInput.value = value;
+        });
     });
 </script>
 @endsection

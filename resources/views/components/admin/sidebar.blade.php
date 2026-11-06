@@ -36,6 +36,15 @@
         </a>
 
         <div class="menu-section-label">Account</div>
+        <div class="sidebar-user-info" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; background: #FAF5EE; border-radius: 0.5rem; margin-bottom: 0.4rem;">
+            <div style="width: 28px; height: 28px; border-radius: 50%; background: #F3E8D8; display: flex; align-items: center; justify-content: center; color: #4A2E2B; font-weight: 700; font-size: 0.8rem; flex-shrink: 0;">
+                {{ strtoupper(substr(Auth::user()->name ?? 'A', 0, 1)) }}
+            </div>
+            <div style="min-width: 0; flex: 1;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: #2D1810; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ Auth::user()->name ?? 'Admin' }}</div>
+                <div style="font-size: 0.72rem; color: #8C756B;">Administrator</div>
+            </div>
+        </div>
         <button type="button" class="sidebar-link sidebar-btn" onclick="openProfileModal()" title="Account settings">
             <x-lucide-settings style="width: 17px; height: 17px; stroke-width: 2;" />
             <span>Settings</span>

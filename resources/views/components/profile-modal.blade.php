@@ -95,8 +95,9 @@
 
                     {{-- Current Password --}}
                     <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="profile_current_password" style="font-weight: 600; font-size: 0.84rem; color: #4A2E2B; margin-bottom: 0.35rem; display: block;">
-                            Current Password
+                        <label for="profile_current_password" style="display: flex; align-items: center; gap: 0.35rem; font-weight: 600; font-size: 0.88rem; color: #4A2E2B; margin-bottom: 0.35rem;">
+                            <x-lucide-key style="width: 14px; height: 14px; stroke-width: 2;" />
+                            <span>Current Password</span>
                         </label>
                         <div class="password-input-wrapper">
                             <input
@@ -122,8 +123,9 @@
 
                     {{-- New Password --}}
                     <div class="form-group" style="margin-bottom: 1rem;">
-                        <label for="profile_new_password" style="font-weight: 600; font-size: 0.84rem; color: #4A2E2B; margin-bottom: 0.35rem; display: block;">
-                            New Password (Min. 6 characters)
+                        <label for="profile_new_password" style="display: flex; align-items: center; gap: 0.35rem; font-weight: 600; font-size: 0.88rem; color: #4A2E2B; margin-bottom: 0.35rem;">
+                            <x-lucide-lock style="width: 14px; height: 14px; stroke-width: 2;" />
+                            <span>New Password (Min. 6 characters)</span>
                         </label>
                         <div class="password-input-wrapper">
                             <input
@@ -149,8 +151,9 @@
 
                     {{-- Confirm New Password --}}
                     <div class="form-group" style="margin-bottom: 1.5rem;">
-                        <label for="profile_new_password_confirmation" style="font-weight: 600; font-size: 0.84rem; color: #4A2E2B; margin-bottom: 0.35rem; display: block;">
-                            Confirm New Password
+                        <label for="profile_new_password_confirmation" style="display: flex; align-items: center; gap: 0.35rem; font-weight: 600; font-size: 0.88rem; color: #4A2E2B; margin-bottom: 0.35rem;">
+                            <x-lucide-lock style="width: 14px; height: 14px; stroke-width: 2;" />
+                            <span>Confirm New Password</span>
                         </label>
                         <div class="password-input-wrapper">
                             <input
@@ -176,7 +179,7 @@
                 </div>
 
                 {{-- Action Buttons --}}
-                <div style="display: flex; gap: 0.75rem; justify-content: flex-end; border-top: 1px solid #EADDCF; padding-top: 1.25rem;">
+                <div class="profile-modal-actions" style="display: flex; gap: 0.75rem; justify-content: flex-end; border-top: 1px solid #EADDCF; padding-top: 1.25rem;">
                     <button 
                         type="button" 
                         class="btn-draft" 
