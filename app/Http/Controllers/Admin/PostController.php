@@ -81,9 +81,9 @@ class PostController extends Controller
         if ($request->filled('verification') && strtolower($request->verification) !== 'all') {
             $verification = strtolower($request->verification);
             if ($verification === 'verified') {
-                $query->where('is_verified', true);
+                $query->whereRaw('is_verified IS TRUE');
             } elseif ($verification === 'unverified') {
-                $query->where('is_verified', false);
+                $query->whereRaw('is_verified IS NOT TRUE');
             }
         }
 

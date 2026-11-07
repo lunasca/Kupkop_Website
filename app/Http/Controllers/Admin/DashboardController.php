@@ -64,15 +64,15 @@ class DashboardController extends Controller
      */
     protected function getAttentionItems(array $stats): array
     {
-        $postsToVerify   = Pet::where('is_verified', false)
+        $postsToVerify   = Pet::whereRaw('is_verified IS NOT TRUE')
                                ->whereNull('archived_at')
                                ->where('status', '!=', 'Draft')
                                ->count();
         // Blocked accounts: status = 'blocked' or is_blocked = true, not archived, not admin
-        $blockedAccounts = User::where('is_admin', false)
+        $blockedAccounts = User::whereRaw('is_admin IS NOT TRUE')
                                ->where(function ($q) {
                                    $q->where('status', 'blocked')
-                                     ->orWhere('is_blocked', true);
+                                     ->orWhereRaw('is_blocked IS TRUE');
                                })
                                ->whereNull('archived_at')
                                ->count();
