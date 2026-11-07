@@ -424,13 +424,13 @@
                     
                     <div class="pet-rescuer-card">
                         <div class="rescuer-icon-badge">
-                            <x-lucide-user style="width: 15px; height: 15px; stroke-width: 2.2; color: #4A2E2B;" />
+                            <x-lucide-user style="width: 18px; height: 18px; stroke-width: 2.2; color: #4A2E2B;" />
                         </div>
                         <div class="rescuer-text-group">
                             <span class="rescuer-sublabel">Rescued &amp; Posted By</span>
-                            <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
                                 <strong id="modal-spec-posted" class="rescuer-name">Rescuer Name</strong>
-                                <span id="modal-rescuer-verified" class="poster-verified-badge" style="display: none; padding: 0.1rem 0.5rem; font-size: 0.72rem;">
+                                <span id="modal-rescuer-verified" class="poster-verified-badge" style="display: none; padding: 0.12rem 0.55rem; font-size: 0.74rem;">
                                     <span class="verified-check-circle" aria-hidden="true">✓</span>
                                     <span>Verified</span>
                                 </span>

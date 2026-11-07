@@ -86,7 +86,7 @@
         <div class="pet-meta-row">
             <p class="pet-location">
                 <x-lucide-map-pin class="location-pin-icon" />
-                <span>{{ !empty($pet->location) ? $pet->location : 'Brgy. 176-F' }}</span>
+                <span class="location-text">{{ !empty($pet->location) ? $pet->location : 'Brgy. 176-F' }}</span>
             </p>
             @php
                 $posterName = $pet->posted_by ?? $pet->user?->name;
