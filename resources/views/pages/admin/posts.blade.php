@@ -97,6 +97,42 @@
         </div>
     </form>
 
+    {{-- Bulk Actions Toolbar for Admin Posts --}}
+    <div id="admin-posts-batch-bar" class="batch-actions-bar" style="flex-shrink: 0;">
+        <div class="batch-bar-info">
+            <span class="batch-bar-count-badge" id="admin-posts-selected-count">0</span>
+            <span>post(s) selected</span>
+        </div>
+        <div class="batch-bar-actions">
+            @if($tab === 'archive')
+                <button type="button" class="batch-btn batch-btn-restore" onclick="executeAdminPostsBulk('restore')">
+                    <x-lucide-rotate-ccw style="width: 14px; height: 14px; stroke-width: 2.2;" />
+                    <span>Restore Selected</span>
+                </button>
+                <button type="button" class="batch-btn batch-btn-delete" onclick="executeAdminPostsBulk('destroy')">
+                    <x-lucide-trash-2 style="width: 14px; height: 14px; stroke-width: 2.2;" />
+                    <span>Delete Permanently</span>
+                </button>
+            @else
+                <button type="button" class="batch-btn batch-btn-verify" onclick="executeAdminPostsBulk('verify')">
+                    <x-lucide-check-circle style="width: 14px; height: 14px; stroke-width: 2.2;" />
+                    <span>Verify Selected</span>
+                </button>
+                <button type="button" class="batch-btn batch-btn-unverify" onclick="executeAdminPostsBulk('unverify')">
+                    <x-lucide-x-circle style="width: 14px; height: 14px; stroke-width: 2.2;" />
+                    <span>Unverify Selected</span>
+                </button>
+                <button type="button" class="batch-btn batch-btn-archive" onclick="executeAdminPostsBulk('archive')">
+                    <x-lucide-archive style="width: 14px; height: 14px; stroke-width: 2.2;" />
+                    <span>Move to Archive</span>
+                </button>
+            @endif
+            <button type="button" class="batch-btn batch-btn-cancel" onclick="clearAdminPostsSelection()">
+                <span>Cancel</span>
+            </button>
+        </div>
+    </div>
+
     {{-- Posts Table Card --}}
     <div class="posts-table-card">
         @if($pets->isEmpty())
@@ -112,6 +148,9 @@
                 <table class="posts-table">
                     <thead>
                         <tr>
+                            <th style="width: 44px; text-align: center;">
+                                <input type="checkbox" id="admin-posts-select-all" class="batch-checkbox" onchange="toggleAllAdminPosts(this.checked)" title="Select all posts">
+                            </th>
                             <th style="min-width: 220px;">Pet</th>
                             <th style="min-width: 240px;">Details</th>
                             <th style="min-width: 170px;">Posted by</th>
@@ -128,7 +167,10 @@
                                 $formattedId = $pet->formatted_id;
                                 $statusLower = strtolower(trim($pet->status));
                             @endphp
-                            <tr>
+                            <tr id="admin-post-row-{{ $pet->id }}">
+                                <td style="text-align: center;">
+                                    <input type="checkbox" class="batch-checkbox admin-post-item-cb" value="{{ $pet->id }}" data-name="{{ addslashes($pet->name) }}" onchange="updateAdminPostsBatchState()" aria-label="Select {{ $pet->name }}">
+                                </td>
                                 {{-- Pet: Photo, Name, and ID --}}
                                 <td>
                                     <div class="pet-cell">
@@ -274,8 +316,11 @@
                             $formattedId = $pet->formatted_id;
                             $statusLower = strtolower(trim($pet->status));
                         @endphp
-                        <div class="admin-pet-card">
+                        <div class="admin-pet-card" id="admin-post-card-{{ $pet->id }}">
                             <div class="admin-card-top">
+                                <div style="display: flex; align-items: center; margin-right: 0.5rem;">
+                                    <input type="checkbox" class="batch-checkbox admin-post-item-cb" value="{{ $pet->id }}" data-name="{{ addslashes($pet->name) }}" onchange="updateAdminPostsBatchState()" aria-label="Select {{ $pet->name }}">
+                                </div>
                                 <div class="admin-card-thumb">
                                     @if($pet->image_path)
                                         <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}" loading="lazy">
@@ -1167,7 +1212,7 @@
                         emptyRow = document.createElement('tr');
                         emptyRow.id = 'admin-posts-live-empty-row';
                         emptyRow.innerHTML = `
-                            <td colspan="5" style="text-align: center; padding: 2.5rem 1rem; color: #71655B;">
+                            <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: #71655B;">
                                 <p style="font-weight: 700; font-size: 1.05rem; margin-bottom: 0.35rem; color: #2D1810;">No matching posts</p>
                                 <p style="font-size: 0.88rem; margin: 0;">No posts match your search query "${searchInput.value.trim()}".</p>
                             </td>
@@ -1183,5 +1228,141 @@
             }, 250);
         });
     })();
+
+    // -------------------------------------------------------------------------
+    // Batch Selection: Admin Posts
+    // -------------------------------------------------------------------------
+    function toggleAllAdminPosts(checked) {
+        const itemCbs = document.querySelectorAll('.admin-post-item-cb');
+        itemCbs.forEach(cb => {
+            const row = cb.closest('tr');
+            const card = cb.closest('.admin-pet-card');
+            const isVisible = (!row || row.style.display !== 'none') && (!card || card.style.display !== 'none');
+            if (isVisible) {
+                cb.checked = checked;
+            } else if (!checked) {
+                cb.checked = false;
+            }
+        });
+        const master = document.getElementById('admin-posts-select-all');
+        if (master) master.checked = checked;
+        updateAdminPostsBatchState();
+    }
+
+    function updateAdminPostsBatchState() {
+        const itemCbs = document.querySelectorAll('.admin-post-item-cb');
+        const checkedCbs = document.querySelectorAll('.admin-post-item-cb:checked');
+        const count = checkedCbs.length;
+
+        const master = document.getElementById('admin-posts-select-all');
+        const isAll = itemCbs.length > 0 && checkedCbs.length === itemCbs.length;
+        const isIndet = checkedCbs.length > 0 && !isAll;
+
+        if (master) {
+            master.checked = isAll;
+            master.indeterminate = isIndet;
+        }
+
+        // Highlight selected rows & cards
+        itemCbs.forEach(cb => {
+            const row = document.getElementById('admin-post-row-' + cb.value);
+            const card = document.getElementById('admin-post-card-' + cb.value);
+            if (row) row.classList.toggle('is-row-selected', cb.checked);
+            if (card) card.classList.toggle('is-card-selected', cb.checked);
+        });
+
+        const bar = document.getElementById('admin-posts-batch-bar');
+        const countBadge = document.getElementById('admin-posts-selected-count');
+        if (bar) {
+            bar.style.display = count > 0 ? 'flex' : 'none';
+        }
+        if (countBadge) {
+            countBadge.textContent = count;
+        }
+    }
+
+    function clearAdminPostsSelection() {
+        toggleAllAdminPosts(false);
+    }
+
+    async function executeAdminPostsBulk(action) {
+        const checkedCbs = Array.from(document.querySelectorAll('.admin-post-item-cb:checked'));
+        const uniqueIds = Array.from(new Set(checkedCbs.map(cb => cb.value)));
+        if (uniqueIds.length === 0) return;
+
+        const count = uniqueIds.length;
+        let actionLabel = 'process';
+        if (action === 'verify') actionLabel = 'verify';
+        if (action === 'unverify') actionLabel = 'unverify';
+        if (action === 'archive') actionLabel = 'move to archive';
+        if (action === 'restore') actionLabel = 'restore';
+        if (action === 'destroy') actionLabel = 'permanently delete';
+
+        const confirmMsg = action === 'destroy'
+            ? `Permanently delete ${count} selected post(s)? This action CANNOT be undone!`
+            : `Are you sure you want to ${actionLabel} ${count} selected post(s)?`;
+
+        if (!confirm(confirmMsg)) return;
+
+        showAdminBatchLoader(`${capitalize(actionLabel)}ing ${count} posts...`);
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        try {
+            for (let i = 0; i < uniqueIds.length; i++) {
+                const id = uniqueIds[i];
+                let url = `/admin/posts/${id}`;
+                let method = 'PATCH';
+
+                if (action === 'verify') url = `/admin/posts/${id}/verify`;
+                else if (action === 'unverify') url = `/admin/posts/${id}/unverify`;
+                else if (action === 'archive') url = `/admin/posts/${id}/archive`;
+                else if (action === 'restore') url = `/admin/posts/${id}/restore`;
+                else if (action === 'destroy') {
+                    url = `/admin/posts/${id}`;
+                    method = 'DELETE';
+                }
+
+                await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ _method: method })
+                });
+            }
+            window.location.reload();
+        } catch (err) {
+            alert('An error occurred during bulk operation. Refreshing...');
+            window.location.reload();
+        }
+    }
+
+    function showAdminBatchLoader(text) {
+        let overlay = document.getElementById('admin-batch-loader');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'admin-batch-loader';
+            overlay.style.cssText = 'position: fixed; inset: 0; background: rgba(45, 24, 16, 0.7); backdrop-filter: blur(3px); z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; font-family: inherit;';
+            overlay.innerHTML = `
+                <div style="background: #2D1810; padding: 1.75rem 2.5rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.15); box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: center;">
+                    <div style="width: 38px; height: 38px; border: 3px solid rgba(255,255,255,0.25); border-top-color: #FEF08A; border-radius: 50%; animation: batchSpin 0.8s linear infinite; margin: 0 auto 1rem auto;"></div>
+                    <div id="admin-batch-loader-text" style="font-size: 1rem; font-weight: 700; color: #FAF9F6;">Processing...</div>
+                </div>
+                <style>@keyframes batchSpin { to { transform: rotate(360deg); } }</style>
+            `;
+            document.body.appendChild(overlay);
+        }
+        const textEl = document.getElementById('admin-batch-loader-text');
+        if (textEl) textEl.textContent = text;
+        overlay.style.display = 'flex';
+    }
+
+    function capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
 </script>
 @endpush

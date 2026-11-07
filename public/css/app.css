@@ -11383,3 +11383,191 @@ body.page-admin-accounts .admin-pagination-wrapper {
     }
 }
 
+
+
+/* ==========================================================================
+   Batch Selection & Bulk Actions Toolbar
+   ========================================================================== */
+
+/* Modern accessible checkbox */
+.batch-checkbox {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 19px;
+    height: 19px;
+    border: 1.5px solid #D5C2B1;
+    border-radius: 5px;
+    background-color: #FFFFFF;
+    cursor: pointer;
+    display: inline-grid;
+    place-content: center;
+    transition: all 0.15s ease-in-out;
+    vertical-align: middle;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.batch-checkbox:hover {
+    border-color: #4A2E2B;
+    background-color: #FAF5EE;
+}
+
+.batch-checkbox:checked {
+    background-color: #4A2E2B;
+    border-color: #4A2E2B;
+}
+
+.batch-checkbox:checked::before {
+    content: "";
+    width: 9px;
+    height: 5px;
+    border-left: 2px solid #FFFFFF;
+    border-bottom: 2px solid #FFFFFF;
+    transform: rotate(-45deg) translate(1px, -1px);
+}
+
+.batch-checkbox:indeterminate {
+    background-color: #4A2E2B;
+    border-color: #4A2E2B;
+}
+
+.batch-checkbox:indeterminate::before {
+    content: "";
+    width: 8px;
+    height: 2px;
+    background-color: #FFFFFF;
+}
+
+/* Bulk floating/docked action bar */
+.batch-actions-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.65rem 1.15rem;
+    background: #2D1810;
+    color: #FFFFFF;
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 24px rgba(45, 24, 16, 0.22);
+    margin-bottom: 0.85rem;
+    animation: batchBarFadeIn 0.2s ease-out;
+    flex-wrap: wrap;
+    z-index: 40;
+}
+
+@keyframes batchBarFadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.batch-bar-info {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.batch-bar-count-badge {
+    background: #FEF08A;
+    color: #4A2E2B;
+    font-weight: 800;
+    font-size: 0.8rem;
+    padding: 0.12rem 0.55rem;
+    border-radius: 999px;
+    min-width: 20px;
+    text-align: center;
+    display: inline-block;
+}
+
+.batch-bar-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+}
+
+.batch-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.42rem 0.85rem;
+    border-radius: 0.55rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: none;
+    font-family: inherit;
+    text-decoration: none;
+    line-height: 1.2;
+}
+
+.batch-btn-restore {
+    background: #FEF08A;
+    color: #4A2E2B;
+}
+.batch-btn-restore:hover {
+    background: #FDE047;
+}
+
+.batch-btn-delete {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+.batch-btn-delete:hover {
+    background: #FECACA;
+}
+
+.batch-btn-verify {
+    background: #D1FAE5;
+    color: #065F46;
+}
+.batch-btn-verify:hover {
+    background: #A7F3D0;
+}
+
+.batch-btn-unverify {
+    background: #FEF3C7;
+    color: #92400E;
+}
+.batch-btn-unverify:hover {
+    background: #FDE68A;
+}
+
+.batch-btn-archive {
+    background: #F3F4F6;
+    color: #374151;
+}
+.batch-btn-archive:hover {
+    background: #E5E7EB;
+}
+
+.batch-btn-block {
+    background: #FEE2E2;
+    color: #991B1B;
+}
+.batch-btn-block:hover {
+    background: #FECACA;
+}
+
+.batch-btn-cancel {
+    background: transparent;
+    color: #EADDCF;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+.batch-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #FFFFFF;
+}
+
+/* Row selection highlight */
+tr.is-row-selected {
+    background-color: #FFFBEB !important;
+}
+.admin-pet-card.is-card-selected,
+.admin-user-card.is-card-selected,
+.mobile-pet-card.is-card-selected {
+    border-color: #4A2E2B !important;
+    background-color: #FFFDF9 !important;
+}

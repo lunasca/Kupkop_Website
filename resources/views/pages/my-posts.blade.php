@@ -596,15 +596,48 @@
         ================================================================ --}}
         <div id="tab-panel-archived" class="mp-tab-panel" role="tabpanel" aria-labelledby="tab-btn-archived" style="display: none;">
             <div class="dashboard-section">
-                <div class="section-title-bar">
+                <div class="section-title-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
                     <h2>Archived Posts ({{ $archivedPets->count() }})</h2>
+                    @if($archivedPets->count() > 0)
+                        <div class="mobile-select-all-wrap show-on-phone" style="display: none; align-items: center; gap: 0.45rem;">
+                            <input type="checkbox" id="mp-archive-select-all-mobile" class="batch-checkbox" onchange="toggleAllMyPostsArchive(this.checked)">
+                            <label for="mp-archive-select-all-mobile" style="font-size: 0.85rem; font-weight: 700; color: #4A2E2B; cursor: pointer;">Select All</label>
+                        </div>
+                    @endif
                 </div>
+
+                @if($archivedPets->count() > 0)
+                    {{-- Bulk Actions Toolbar for My Posts Archive --}}
+                    <div id="mp-archive-batch-bar" class="batch-actions-bar">
+                        <div class="batch-bar-info">
+                            <span class="batch-bar-count-badge" id="mp-archive-selected-count">0</span>
+                            <span>archived post(s) selected</span>
+                        </div>
+                        <div class="batch-bar-actions">
+                            <button type="button" class="batch-btn batch-btn-restore" onclick="executeMyPostsArchiveBulk('restore')">
+                                <x-lucide-rotate-ccw style="width: 14px; height: 14px; stroke-width: 2.2;" />
+                                <span>Restore Selected</span>
+                            </button>
+                            <button type="button" class="batch-btn batch-btn-delete" onclick="executeMyPostsArchiveBulk('delete')">
+                                <x-lucide-trash-2 style="width: 14px; height: 14px; stroke-width: 2.2;" />
+                                <span>Delete Permanently</span>
+                            </button>
+                            <button type="button" class="batch-btn batch-btn-cancel" onclick="clearMyPostsArchiveSelection()">
+                                <span>Cancel</span>
+                            </button>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="table-card">
                     @if($archivedPets->count() > 0)
                         <div class="table-responsive hide-on-phone">
                             <table class="kupkop-table">
                                 <thead>
                                     <tr>
+                                        <th style="width: 44px; text-align: center;">
+                                            <input type="checkbox" id="mp-archive-select-all" class="batch-checkbox" onchange="toggleAllMyPostsArchive(this.checked)" title="Select all archived posts">
+                                        </th>
                                         <th style="width: 90px;">Photo</th>
                                         <th>Animal Name & ID</th>
                                         <th>Details</th>
@@ -614,7 +647,10 @@
                                 </thead>
                                 <tbody>
                                     @foreach($archivedPets as $pet)
-                                        <tr>
+                                        <tr id="mp-archived-row-{{ $pet->id }}">
+                                            <td style="text-align: center;">
+                                                <input type="checkbox" class="batch-checkbox mp-archive-item-cb" value="{{ $pet->id }}" data-name="{{ addslashes($pet->name) }}" onchange="updateMyPostsArchiveBatchState()" aria-label="Select {{ $pet->name }}">
+                                            </td>
                                             <td>
                                                 <div class="table-pet-thumb" onclick="openFullscreenCarouselForPet({{ json_encode($pet) }})" style="cursor: pointer;" title="Click to view photos in fullscreen carousel">
                                                     <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}" loading="lazy">
@@ -670,8 +706,11 @@
                         {{-- Mobile Cards for Archived Posts (phone only) --}}
                         <div class="mobile-card-list" aria-label="Archived posts">
                             @foreach($archivedPets as $pet)
-                                <div class="mobile-pet-card">
+                                <div class="mobile-pet-card" id="mp-archived-card-{{ $pet->id }}">
                                     <div class="mobile-card-top">
+                                        <div style="display: flex; align-items: center; margin-right: 0.5rem;">
+                                            <input type="checkbox" class="batch-checkbox mp-archive-item-cb" value="{{ $pet->id }}" data-name="{{ addslashes($pet->name) }}" onchange="updateMyPostsArchiveBatchState()" aria-label="Select {{ $pet->name }}">
+                                        </div>
                                         <div class="table-pet-thumb" onclick="openFullscreenCarouselForPet({{ json_encode($pet) }})" style="cursor: pointer; width: 64px; height: 64px; flex-shrink: 0;" title="Click to view photos">
                                             <img src="{{ $pet->image_url }}" alt="{{ $pet->name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; border-radius: 0.5rem;">
                                         </div>
@@ -3037,6 +3076,103 @@
             }
         }
     });
+
+    // -------------------------------------------------------------------------
+    // Batch Selection: My Posts Archive
+    // -------------------------------------------------------------------------
+    function toggleAllMyPostsArchive(checked) {
+        const itemCbs = document.querySelectorAll('.mp-archive-item-cb');
+        itemCbs.forEach(cb => {
+            cb.checked = checked;
+        });
+        const masterDesktop = document.getElementById('mp-archive-select-all');
+        const masterMobile = document.getElementById('mp-archive-select-all-mobile');
+        if (masterDesktop) masterDesktop.checked = checked;
+        if (masterMobile) masterMobile.checked = checked;
+        updateMyPostsArchiveBatchState();
+    }
+
+    function updateMyPostsArchiveBatchState() {
+        const itemCbs = document.querySelectorAll('.mp-archive-item-cb');
+        const checkedCbs = document.querySelectorAll('.mp-archive-item-cb:checked');
+        const count = checkedCbs.length;
+
+        const masterDesktop = document.getElementById('mp-archive-select-all');
+        const masterMobile = document.getElementById('mp-archive-select-all-mobile');
+        const isAll = itemCbs.length > 0 && checkedCbs.length === itemCbs.length;
+        const isIndet = checkedCbs.length > 0 && !isAll;
+
+        if (masterDesktop) {
+            masterDesktop.checked = isAll;
+            masterDesktop.indeterminate = isIndet;
+        }
+        if (masterMobile) {
+            masterMobile.checked = isAll;
+            masterMobile.indeterminate = isIndet;
+        }
+
+        // Highlight selected rows/cards
+        itemCbs.forEach(cb => {
+            const row = document.getElementById('mp-archived-row-' + cb.value);
+            const card = document.getElementById('mp-archived-card-' + cb.value);
+            if (row) row.classList.toggle('is-row-selected', cb.checked);
+            if (card) card.classList.toggle('is-card-selected', cb.checked);
+        });
+
+        const bar = document.getElementById('mp-archive-batch-bar');
+        const countBadge = document.getElementById('mp-archive-selected-count');
+        if (bar) {
+            bar.style.display = count > 0 ? 'flex' : 'none';
+        }
+        if (countBadge) {
+            countBadge.textContent = count;
+        }
+    }
+
+    function clearMyPostsArchiveSelection() {
+        toggleAllMyPostsArchive(false);
+    }
+
+    async function executeMyPostsArchiveBulk(action) {
+        const checkedCbs = Array.from(document.querySelectorAll('.mp-archive-item-cb:checked'));
+        const uniqueIds = Array.from(new Set(checkedCbs.map(cb => cb.value)));
+        if (uniqueIds.length === 0) return;
+
+        const count = uniqueIds.length;
+        const confirmMsg = action === 'restore'
+            ? `Restore ${count} selected archived post(s) back to active listings?`
+            : `Permanently delete ${count} selected post(s)? This action CANNOT be undone!`;
+
+        if (!confirm(confirmMsg)) return;
+
+        if (window.showKupLoader) {
+            window.showKupLoader(action === 'restore' ? `Restoring ${count} posts...` : `Deleting ${count} posts...`);
+        }
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        try {
+            for (let i = 0; i < uniqueIds.length; i++) {
+                const id = uniqueIds[i];
+                const url = action === 'restore' ? `/posts/${id}/restore` : `/posts/${id}`;
+                const method = action === 'restore' ? 'PATCH' : 'DELETE';
+                await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ _method: method })
+                });
+            }
+            window.location.reload();
+        } catch (err) {
+            alert('An error occurred during bulk operation. Refreshing page...');
+            window.location.reload();
+        }
+    }
 </script>
 
 {{-- Fullscreen Pet Image Carousel Viewer Modal (My Posts) --}}
