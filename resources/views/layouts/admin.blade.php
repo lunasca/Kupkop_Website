@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
     @stack('styles')
 </head>
-<body class="admin-body">
+<body class="admin-body {{ request()->routeIs('admin.posts') ? 'page-admin-posts' : '' }} {{ request()->routeIs('admin.accounts') ? 'page-admin-accounts' : '' }}">
     <div class="admin-wrapper" id="adminWrapper">
         {{-- Mobile sidebar overlay backdrop --}}
         <div class="admin-sidebar-overlay" id="adminSidebarOverlay" onclick="closeAdminSidebar()"></div>

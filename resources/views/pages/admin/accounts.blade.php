@@ -92,7 +92,7 @@
             <p style="font-size: 0.95rem; color: #71655B; margin: 0;">Removed accounts will appear here.</p>
         </div>
 
-        <div id="accounts-table-wrapper" style="overflow-x: auto;">
+        <div id="accounts-table-wrapper" class="admin-table-scroll-wrapper" style="overflow-x: auto;">
             <table class="posts-table">
                 <thead>
                     <tr>

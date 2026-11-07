@@ -108,7 +108,7 @@
                 <p style="font-size: 0.9rem; color: #71655B; margin: 0;">Try adjusting your filters or search terms.</p>
             </div>
         @else
-            <div style="overflow-x: auto;">
+            <div class="admin-table-scroll-wrapper" style="overflow-x: auto;">
                 <table class="posts-table">
                     <thead>
                         <tr>
@@ -375,13 +375,14 @@
                     @endforeach
                 </div>
 
-                {{-- Pagination Links --}}
-                @if(method_exists($pets, 'hasPages') && $pets->hasPages())
-                    <div class="admin-pagination-wrapper" style="padding: 1.25rem; display: flex; justify-content: center;">
-                        {{ $pets->links() }}
-                    </div>
-                @endif
             </div>
+
+        {{-- Pagination Links (outside scroll wrapper, anchored to bottom of card) --}}
+        @if(method_exists($pets, 'hasPages') && $pets->hasPages())
+            <div class="admin-pagination-wrapper" style="padding: 1.25rem; display: flex; justify-content: center;">
+                {{ $pets->links() }}
+            </div>
+        @endif
         @endif
     </div>
 </div>

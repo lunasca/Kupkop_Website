@@ -11301,3 +11301,85 @@ body.page-my-posts .site-header {
 
 
 
+
+/* ==========================================================================
+   Admin Posts & Accounts: Fixed Header + Scrollable Table
+   ========================================================================== */
+
+/* Establish fixed-height chain — only on posts and accounts pages */
+html:has(body.page-admin-posts),
+html:has(body.page-admin-accounts),
+body.page-admin-posts,
+body.page-admin-accounts {
+    height: 100dvh !important;
+    overflow: hidden !important;
+}
+
+body.page-admin-posts .admin-main,
+body.page-admin-accounts .admin-main {
+    height: 100dvh !important;
+    overflow: hidden !important;
+}
+
+body.page-admin-posts .admin-content,
+body.page-admin-accounts .admin-content {
+    height: 100% !important;
+    overflow: hidden !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding-bottom: 0 !important;
+}
+
+body.page-admin-posts .admin-dashboard-container,
+body.page-admin-accounts .admin-dashboard-container {
+    display: flex !important;
+    flex-direction: column !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+/* Table card grows to fill remaining space */
+body.page-admin-posts .posts-table-card,
+body.page-admin-accounts .posts-table-card {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+}
+
+/* The scroll wrapper becomes the actual scroll container */
+body.page-admin-posts .admin-table-scroll-wrapper,
+body.page-admin-accounts .admin-table-scroll-wrapper {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: auto !important;
+}
+
+/* Sticky thead inside scrollable table */
+body.page-admin-posts .posts-table thead th,
+body.page-admin-accounts .posts-table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    background: #FCFAF7 !important;
+}
+
+/* Pagination footer: prevent being cut off */
+body.page-admin-posts .admin-pagination-wrapper,
+body.page-admin-accounts .admin-pagination-wrapper {
+    flex-shrink: 0 !important;
+    padding: 0.85rem 1.35rem !important;
+    border-top: 1px solid #F3E8D8;
+    background: #FFFFFF;
+}
+
+/* Mobile: account for mobile header height so content is not hidden under it */
+@media (max-width: 1024px) {
+    body.page-admin-posts .admin-content,
+    body.page-admin-accounts .admin-content {
+        height: calc(100% - 64px) !important;
+    }
+}
+
