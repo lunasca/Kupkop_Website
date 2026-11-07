@@ -106,9 +106,9 @@ class HomeController extends Controller
                 ->first();
 
             $verifiedCount = (clone $countBase)->where(function ($q) {
-                $q->where('is_verified', true)
+                $q->whereRaw('is_verified IS TRUE')
                   ->orWhereHas('user', function ($uq) {
-                      $uq->where('is_verified', true);
+                      $uq->whereRaw('is_verified IS TRUE');
                   });
             })->count();
 
@@ -129,9 +129,9 @@ class HomeController extends Controller
             $query->where('status', 'Pending');
         } elseif ($selectedStatus === 'verified') {
             $query->where(function ($q) {
-                $q->where('is_verified', true)
+                $q->whereRaw('is_verified IS TRUE')
                   ->orWhereHas('user', function ($uq) {
-                      $uq->where('is_verified', true);
+                      $uq->whereRaw('is_verified IS TRUE');
                   });
             });
         } elseif ($selectedStatus === 'adopted') {
