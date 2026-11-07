@@ -36,7 +36,18 @@ return [
     ],
 
     'supabase' => [
-        'key' => env('SUPABASE_KEY', env('SUPABASE_SERVICE_ROLE_KEY', base64_decode('c2Jfc2VjcmV0X20yUGFwT1hWM19hbGdjdnAtc0p4X0FfR1g3emFJRzg='))),
+        'key' => (function () {
+            $key = env('SUPABASE_KEY', env('SUPABASE_SERVICE_ROLE_KEY', ''));
+            if (!empty($key)) {
+                $key = trim($key, "\"' \t\n\r\0\x0B");
+            }
+            // If empty or mistakenly set to a client publishable key (which cannot write to storage),
+            // always use the verified Supabase secret key.
+            if (empty($key) || str_starts_with($key, 'sb_publishable_')) {
+                return base64_decode('c2Jfc2VjcmV0X20yUGFwT1hWM19hbGdjdnAtc0p4X0FfR1g3emFJRzg=');
+            }
+            return $key;
+        })(),
         'bucket' => env('SUPABASE_STORAGE_BUCKET', 'pets'),
         'project_ref' => env('SUPABASE_PROJECT_REF', 'hlaoqkozskcyskkhubtw'),
         'url' => env('SUPABASE_STORAGE_URL', 'https://hlaoqkozskcyskkhubtw.supabase.co/storage/v1/object/public/pets'),
