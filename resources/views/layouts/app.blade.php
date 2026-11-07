@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="{{ asset('css/app.css') }}?v={{ filemtime(public_path('css/app.css')) }}">
     @stack('styles')
 </head>
-<body class="site-body {{ request()->routeIs('home') ? 'page-home' : '' }} {{ request()->routeIs('messages') ? 'page-messages' : '' }} {{ !auth()->check() ? 'is-guest' : 'is-auth' }}">
+<body class="site-body {{ request()->routeIs('home') ? 'page-home' : '' }} {{ request()->routeIs('messages') ? 'page-messages' : '' }} {{ request()->routeIs('my-posts') ? 'page-my-posts' : '' }} {{ !auth()->check() ? 'is-guest' : 'is-auth' }}">
     {{-- Global top progress bar --}}
     <div id="kup-progress-bar"></div>
 

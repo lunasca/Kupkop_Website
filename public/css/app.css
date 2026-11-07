@@ -10287,7 +10287,7 @@ img { max-width: 100%; height: auto; }
 
 /* ── 9. NO HORIZONTAL SCROLL ────────────────────────────── */
 html, body {
-    overflow-x: hidden;
+    overflow-x: clip;
     max-width: 100%;
 }
 
@@ -11264,6 +11264,28 @@ html, body {
     border-color: #ffffff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
 }
+
+/* ==========================================================================
+   My Posts: Sticky Navigation Bar
+   ========================================================================== */
+html:has(body.page-my-posts),
+body.page-my-posts {
+    overflow-x: clip !important;
+}
+
+body.page-my-posts {
+    overflow-y: visible !important;
+}
+
+body.page-my-posts .site-header {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 500 !important;
+    width: 100% !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15) !important;
+}
+
 
 
 
