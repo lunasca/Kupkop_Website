@@ -22,7 +22,7 @@
                     src="{{ asset('images/logo.png') }}" 
                     alt="Kupkop Logo" 
                     class="nav-logo-img"
-                    style="height: 40px; width: auto; object-fit: contain; display: block;"
+                    style="height: 32px; width: auto; object-fit: contain; display: block;"
                 >
             </a>
         </div>
