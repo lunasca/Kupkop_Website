@@ -258,4 +258,51 @@ class HomeStatusFilterTest extends TestCase
         $response->assertSee('Champion Verified Pet');
         $response->assertSee('Ordinary Unverified Pet');
     }
+
+    public function test_adopted_pets_and_filter_tab_are_not_shown_on_home_page(): void
+    {
+        $user = User::create([
+            'name' => 'Rescuer User',
+            'email' => 'rescuer.adopted@example.com',
+            'password' => bcrypt('password123'),
+            'status' => 'active',
+            'is_verified' => false,
+        ]);
+
+        Pet::create([
+            'user_id' => $user->id,
+            'name' => 'Active Adoptable Pet',
+            'species' => 'Dog',
+            'breed' => 'Aspin',
+            'age' => '1 year',
+            'gender' => 'Male',
+            'description' => 'Still available',
+            'status' => 'Available',
+            'posted_by' => $user->name,
+        ]);
+
+        Pet::create([
+            'user_id' => $user->id,
+            'name' => 'Already Adopted Pet',
+            'species' => 'Dog',
+            'breed' => 'Aspin',
+            'age' => '2 years',
+            'gender' => 'Female',
+            'description' => 'Happy in new home',
+            'status' => 'Adopted',
+            'posted_by' => $user->name,
+        ]);
+
+        $response = $this->get('/');
+        $response->assertStatus(200);
+
+        // Adopted filter tab must NOT exist
+        $response->assertDontSee("setHomeStatus('adopted')", false);
+
+        // Active pet must be visible
+        $response->assertSee('Active Adoptable Pet');
+
+        // Adopted pet must NOT appear on the home feed
+        $response->assertDontSee('Already Adopted Pet');
+    }
 }

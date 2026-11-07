@@ -292,10 +292,6 @@
                     <span>Pending</span>
                     <span class="home-status-badge">{{ $statusCounts['pending'] ?? 0 }}</span>
                 </button>
-                <button type="button" class="home-status-pill {{ $currStatus === 'adopted' ? 'active' : '' }}" onclick="setHomeStatus('adopted')">
-                    <span>Adopted</span>
-                    <span class="home-status-badge">{{ $statusCounts['adopted'] ?? 0 }}</span>
-                </button>
                 <button type="button" class="home-status-pill {{ $currStatus === 'verified' ? 'active' : '' }}" onclick="setHomeStatus('verified')">
                     <span>Verified</span>
                     <span class="home-status-badge">{{ $statusCounts['verified'] ?? 0 }}</span>

@@ -43,7 +43,7 @@ class HomeController extends Controller
                 $q->select('id', 'name', 'is_verified', 'status', 'archived_at');
             }])
             ->whereNull('archived_at')
-            ->where('status', '!=', 'Draft')
+            ->whereNotIn('status', ['Draft', 'Adopted'])
             ->whereHas('user', function ($q) {
                 $q->where('status', 'active')
                   ->whereNull('archived_at');
@@ -94,14 +94,13 @@ class HomeController extends Controller
                     $q->where('status', 'active')
                       ->whereNull('archived_at');
                 })
-                ->where('status', '!=', 'Draft');
+                ->whereNotIn('status', ['Draft', 'Adopted']);
 
             $rawCounts = (clone $countBase)
                 ->selectRaw("
                     COUNT(*) as all_count,
                     COUNT(CASE WHEN status = 'Available' THEN 1 END) as available_count,
-                    COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending_count,
-                    COUNT(CASE WHEN status = 'Adopted' THEN 1 END) as adopted_count
+                    COUNT(CASE WHEN status = 'Pending' THEN 1 END) as pending_count
                 ")
                 ->first();
 
@@ -117,7 +116,6 @@ class HomeController extends Controller
                 'available' => (int) ($rawCounts->available_count ?? 0),
                 'pending'   => (int) ($rawCounts->pending_count ?? 0),
                 'verified'  => (int) $verifiedCount,
-                'adopted'   => (int) ($rawCounts->adopted_count ?? 0),
             ];
         });
 
@@ -134,11 +132,6 @@ class HomeController extends Controller
                       $uq->whereRaw('is_verified IS TRUE');
                   });
             });
-        } elseif ($selectedStatus === 'adopted') {
-            $query->where('status', 'Adopted');
-        } else {
-            // 'all' shows everything except Drafts
-            $query->where('status', '!=', 'Draft');
         }
 
         // Fetch pets ordered with newest first
