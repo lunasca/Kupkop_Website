@@ -1146,15 +1146,21 @@ async function pollThread() {
 
 // ── Init ───────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    // If no specific thread selected via query param, auto-select the first conversation
-    if (activeId === null && conversations.length > 0) {
+    // Track whether a specific partner was set via URL query param
+    const hadExplicitPartner = activeId !== null;
+
+    // On mobile, show the conversation list first unless a specific recipient was requested
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+
+    // On desktop, auto-select the first conversation if none was explicitly requested
+    if (!isMobile && activeId === null && conversations.length > 0) {
         activeId = conversations[0].id;
     }
 
     renderSidebar();
     updateUnreadBadges();
 
-    if (activeId !== null) {
+    if (activeId !== null && (!isMobile || hadExplicitPartner)) {
         selectConversation(activeId);
 
         // Pre-fill courteous inquiry if opening with a pet context and no messages sent yet

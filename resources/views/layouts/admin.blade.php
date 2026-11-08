@@ -29,17 +29,18 @@
         <div class="admin-main">
             {{-- Mobile Header Bar (Phone & Tablet) --}}
             <div class="admin-mobile-header" id="adminMobileHeader">
-                <button type="button" class="admin-mobile-toggle" id="adminMenuToggle" onclick="toggleAdminSidebar()" aria-label="Open navigation menu">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <line x1="3" y1="6" x2="21" y2="6"></line>
-                        <line x1="3" y1="12" x2="21" y2="12"></line>
-                        <line x1="3" y1="18" x2="21" y2="18"></line>
-                    </svg>
-                </button>
-                <a href="{{ route('admin.dashboard') }}" class="admin-mobile-brand" style="display: flex; align-items: center; text-decoration: none;">
-                    <img src="{{ asset('images/logo.png') }}" alt="Kupkop" style="height: 32px; width: auto; filter: brightness(0) invert(1);">
-                </a>
-                <div style="width: 44px;"></div>
+                <div class="brand-group" style="display: flex; align-items: center; gap: 0.65rem;">
+                    <button type="button" class="admin-mobile-toggle" id="adminMenuToggle" onclick="toggleAdminSidebar()" aria-label="Open navigation menu" style="background: transparent !important; background-color: transparent !important; border: none !important; box-shadow: none !important; outline: none !important; border-radius: 0 !important; padding: 4px 6px !important; display: inline-flex; align-items: center; justify-content: center;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <a href="{{ route('admin.dashboard') }}" class="brand-link" title="Kupkop Admin Dashboard" style="display: flex; align-items: center; text-decoration: none;">
+                        <img src="{{ asset('images/logo.png') }}" alt="Kupkop Logo" class="nav-logo-img" style="height: 26px; width: auto; object-fit: contain; display: block;">
+                    </a>
+                </div>
             </div>
 
             {{-- Main Content Area --}}

@@ -315,6 +315,11 @@ a.text-link:hover {
 
 /* White rounded Login button */
 .nav-btn-white {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1;
     text-decoration: none;
     font-size: 0.88rem;
     font-weight: 700;
@@ -329,6 +334,7 @@ a.text-link:hover {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     transition: all 0.2s ease;
     margin-left: 0.35rem;
+    box-sizing: border-box;
 }
 
 .nav-btn-white:hover {
@@ -7983,9 +7989,11 @@ body.page-messages .footer {
 .admin-mobile-header {
     display: none;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     background-color: var(--brand-dark-brown, #4A2E2B);
-    padding: 0.75rem 1.1rem;
+    padding: 0.65rem 1rem;
+    height: 56px;
+    box-sizing: border-box;
     position: sticky;
     top: 0;
     z-index: 90;
@@ -7994,22 +8002,38 @@ body.page-messages .footer {
 }
 
 .admin-mobile-toggle {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    background: rgba(255,255,255,0.1);
+    background: transparent;
+    background-color: transparent;
     border: none;
-    border-radius: 0.6rem;
+    box-shadow: none;
+    border-radius: 0;
+    padding: 4px 6px;
     color: #ffffff;
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: opacity 0.15s ease;
     flex-shrink: 0;
+    outline: none;
 }
 
-.admin-mobile-toggle:hover {
-    background: rgba(255,255,255,0.2);
+.admin-mobile-toggle:hover,
+.admin-mobile-toggle:focus,
+.admin-mobile-toggle:active {
+    background: transparent;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    outline: none;
+    opacity: 0.85;
+}
+
+.admin-mobile-toggle svg {
+    stroke: #ffffff;
+    width: 22px;
+    height: 22px;
+    display: block;
 }
 
 /* Overlay backdrop when sidebar is open on mobile */
@@ -9208,8 +9232,15 @@ img { max-width: 100%; height: auto; }
     /* Show login button for guests on mobile, but after hamburger */
     .nav-btn-white {
         display: inline-flex;
-        font-size: 0.85rem;
-        padding: 0.42rem 0.9rem;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        line-height: 1;
+        font-size: 0.84rem;
+        height: 32px;
+        min-height: 32px;
+        padding: 0 0.95rem;
+        box-sizing: border-box;
     }
     /* header sticky safe area */
     .site-header {
@@ -10214,8 +10245,8 @@ img { max-width: 100%; height: auto; }
         max-height: 90vh !important;
         overflow-y: auto !important;
     }
-    /* Confirm dialog buttons: stack */
-    .modal-dialog [style*="display: flex"][style*="gap"] {
+    /* Confirm dialog buttons: stack (exclude auth modals and form labels) */
+    .modal-dialog:not(.auth-modal-dialog) > div:last-child[style*="display: flex"][style*="gap"] {
         flex-direction: column !important;
     }
 }
@@ -10546,22 +10577,23 @@ html, body {
         width: 52px !important;
         height: 52px !important;
         border-radius: 50% !important;
-        background-color: #4A2E2B !important;
-        color: #FBBF24 !important;
-        border: none !important;
+        background-color: #FDE047 !important;
+        color: #4A2E2B !important;
+        border: 2px solid rgba(74, 46, 43, 0.08) !important;
         cursor: pointer !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        box-shadow: 0 4px 14px rgba(45, 24, 16, 0.35), 0 2px 6px rgba(45, 24, 16, 0.2) !important;
+        box-shadow: 0 4px 14px rgba(74, 46, 43, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
         z-index: 45 !important;
         transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease, opacity 0.2s ease, visibility 0.2s ease !important;
     }
 
     .floating-create-post-btn:hover {
         transform: scale(1.08) !important;
-        background-color: #381E1C !important;
-        box-shadow: 0 6px 18px rgba(45, 24, 16, 0.45) !important;
+        background-color: #FACC15 !important;
+        color: #382220 !important;
+        box-shadow: 0 6px 18px rgba(74, 46, 43, 0.25) !important;
     }
 
     .floating-create-post-btn:active {
@@ -10571,8 +10603,8 @@ html, body {
     .floating-create-post-icon {
         width: 24px !important;
         height: 24px !important;
-        stroke-width: 2.6 !important;
-        color: #FBBF24 !important;
+        stroke-width: 2.8 !important;
+        color: #4A2E2B !important;
     }
 
     /* Hide floating button whenever any modal, bottom sheet, or mobile menu is open */
@@ -11383,3 +11415,2735 @@ body.page-admin-accounts .admin-pagination-wrapper {
     }
 }
 
+
+
+/* ==========================================================================
+   MOBILE & TABLET RESPONSIVE REFINEMENTS
+   (Desktop layout strictly untouched)
+   ========================================================================== */
+
+/* 1. TOP NAVBAR: Clean 3-Line Hamburger & Proportional Mobile Logo */
+@media (max-width: 1024px) {
+    /* Style hamburger toggle strictly as 3 clean lines without box background or border container */
+    .nav-mobile-toggle,
+    .nav-mobile-toggle-left,
+    .admin-mobile-toggle,
+    #adminMenuToggle {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 4px 6px !important;
+        width: auto !important;
+        height: auto !important;
+        min-width: unset !important;
+        min-height: unset !important;
+        color: #ffffff !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        outline: none !important;
+    }
+    .nav-mobile-toggle:hover,
+    .nav-mobile-toggle:focus,
+    .nav-mobile-toggle:active,
+    .admin-mobile-toggle:hover,
+    .admin-mobile-toggle:focus,
+    .admin-mobile-toggle:active,
+    #adminMenuToggle:hover,
+    #adminMenuToggle:focus,
+    #adminMenuToggle:active {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+    }
+    .nav-mobile-toggle svg,
+    .admin-mobile-toggle svg,
+    #adminMenuToggle svg {
+        stroke: #ffffff !important;
+        width: 22px !important;
+        height: 22px !important;
+        display: block !important;
+    }
+
+    /* Sidebar Navigation Menu: Increase vertical gap/spacing and fix mobile alignment */
+    .nav-mobile-drawer .nav-drawer-nav {
+        padding: 1.15rem 0.95rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.65rem !important;
+    }
+    .nav-mobile-drawer .nav-drawer-link {
+        padding: 0.75rem 1rem !important;
+        font-size: 0.95rem !important;
+        font-weight: 600 !important;
+        border-radius: 0.75rem !important;
+        gap: 0.85rem !important;
+        display: flex !important;
+        align-items: center !important;
+        transition: background 0.15s ease !important;
+    }
+    .nav-mobile-drawer .nav-drawer-link svg {
+        width: 20px !important;
+        height: 20px !important;
+        flex-shrink: 0 !important;
+    }
+    .nav-mobile-drawer .nav-drawer-section-label {
+        padding: 0.75rem 0.95rem 0.35rem 0.95rem !important;
+        margin-top: 0.5rem !important;
+        font-size: 0.72rem !important;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Slightly reduce navbar logo size on mobile/tablet view */
+    .site-header .nav-logo-img,
+    .brand-link .nav-logo-img {
+        height: 26px !important;
+        max-height: 26px !important;
+        width: auto !important;
+    }
+}
+
+/* 2. FILTER COMPONENT BUGFIX: Remove unexpected numeric counter badge & prevent clipping */
+@media (max-width: 768px) {
+    /* Hide the numeric counter badges inside the status filter pills on mobile */
+    .home-status-pill .home-status-badge,
+    .status-pills-group .home-status-badge {
+        display: none !important;
+    }
+
+    /* Keep filter pill container neatly aligned, full width with no horizontal clipping */
+    body.page-home .status-pills-row,
+    .status-pills-row {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0.45rem 0 0.65rem 0 !important;
+        padding: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 0.35rem !important;
+        box-sizing: border-box !important;
+    }
+
+    body.page-home .status-pills-group,
+    .status-pills-group {
+        width: 100% !important;
+        max-width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 0.35rem !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        overflow-x: auto !important;
+        scrollbar-width: none !important;
+        -webkit-overflow-scrolling: touch !important;
+        box-sizing: border-box !important;
+    }
+
+    body.page-home .status-pills-group::-webkit-scrollbar,
+    .status-pills-group::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    body.page-home .home-status-pill,
+    .status-pills-group .home-status-pill {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        height: 36px !important;
+        padding: 0 0.45rem !important;
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        text-align: center !important;
+        justify-content: center !important;
+        align-items: center !important;
+        white-space: nowrap !important;
+        border-radius: 9999px !important;
+        box-sizing: border-box !important;
+    }
+
+    body.page-home .status-pills-meta,
+    .status-pills-meta {
+        font-size: 0.78rem !important;
+        color: #71655B !important;
+        margin-top: 0.15rem !important;
+        text-align: right !important;
+        width: 100% !important;
+    }
+}
+
+/* 3. PET CARDS & IMAGE OPTIMIZATION (Mobile/Tablet) */
+@media (max-width: 639px) {
+    /* Compact, proportional pet card height without excessive whitespace */
+    .pet-card {
+        display: flex !important;
+        flex-direction: column !important;
+        height: auto !important;
+        border-radius: 0.85rem !important;
+        overflow: hidden !important;
+    }
+
+    .pet-image-container {
+        height: 126px !important;
+        min-height: 126px !important;
+        max-height: 126px !important;
+        border-top-left-radius: 0.85rem !important;
+        border-top-right-radius: 0.85rem !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+
+    .pet-image,
+    .pet-card-gallery-wrap img {
+        height: 126px !important;
+        min-height: 126px !important;
+        max-height: 126px !important;
+        width: 100% !important;
+        object-fit: cover !important;
+    }
+
+    /* Tightened card body padding and spacing to eliminate void gap */
+    .pet-card-body {
+        padding: 0.55rem 0.6rem 0.65rem 0.6rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 0 0 auto !important;
+    }
+
+    .pet-header {
+        margin-bottom: 0.2rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 0.3rem !important;
+    }
+
+    .pet-name {
+        font-size: 0.92rem !important;
+        font-weight: 800 !important;
+        line-height: 1.2 !important;
+    }
+
+    .pet-species-pill {
+        font-size: 0.68rem !important;
+        padding: 0.12rem 0.4rem !important;
+        border-radius: 9999px !important;
+    }
+
+    .pet-details-pills {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.2rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    .pet-detail-pill {
+        font-size: 0.65rem !important;
+        padding: 0.1rem 0.35rem !important;
+        border-radius: 0.35rem !important;
+    }
+
+    .pet-meta-row {
+        font-size: 0.7rem !important;
+        gap: 0.2rem !important;
+        margin-bottom: 0.25rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+    }
+
+    .pet-description {
+        font-size: 0.75rem !important;
+        line-height: 1.35 !important;
+        margin-top: 0.1rem !important;
+        margin-bottom: 0.4rem !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        flex-grow: 0 !important;
+    }
+
+    .pet-card-footer {
+        margin-top: 0.15rem !important;
+    }
+
+    .btn-pet-meet {
+        height: 34px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        border-radius: 0.55rem !important;
+        padding: 0.3rem 0.5rem !important;
+        width: 100% !important;
+    }
+}
+
+/* Tablet: Prominent image height */
+@media (min-width: 640px) and (max-width: 1024px) {
+    .pet-image-container,
+    .pet-image,
+    .pet-card-gallery-wrap img {
+        height: 195px !important;
+        min-height: 195px !important;
+    }
+}
+
+/* 4. CAROUSEL INDICATOR: Strict circular shape (prevent oval / distorted rendering) */
+.pet-card-carousel-dots {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 5px !important;
+    pointer-events: auto !important;
+}
+
+.card-dot-indicator {
+    width: 6px !important;
+    height: 6px !important;
+    min-width: 6px !important;
+    min-height: 6px !important;
+    max-width: 6px !important;
+    max-height: 6px !important;
+    box-sizing: border-box !important;
+    border-radius: 50% !important;
+    aspect-ratio: 1 / 1 !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    display: inline-block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 1px solid rgba(0, 0, 0, 0.25) !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+    line-height: 0 !important;
+    transform: none !important;
+}
+
+.card-dot-indicator.active {
+    width: 7px !important;
+    height: 7px !important;
+    min-width: 7px !important;
+    min-height: 7px !important;
+    max-width: 7px !important;
+    max-height: 7px !important;
+    border-radius: 50% !important;
+    aspect-ratio: 1 / 1 !important;
+    background: #4A2E2B !important;
+    border: 1px solid #FFFFFF !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4) !important;
+    transform: none !important;
+    box-sizing: border-box !important;
+}
+
+/* 5. HOMEPAGE GENERAL SPACING & TYPOGRAPHY REFINEMENTS FOR MOBILE */
+@media (max-width: 768px) {
+    body.page-home .hero-section {
+        padding-top: 1rem !important;
+        padding-bottom: 0.5rem !important;
+    }
+    body.page-home .hero-greeting-title {
+        font-size: 1.35rem !important;
+        font-weight: 800 !important;
+        line-height: 1.25 !important;
+        color: #4A2E2B !important;
+    }
+    body.page-home .hero-greeting-sub {
+        font-size: 0.85rem !important;
+        line-height: 1.4 !important;
+        color: #71655B !important;
+        margin-top: 0.25rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+    body.page-home .pets-section {
+        padding-top: 0.5rem !important;
+        padding-bottom: 2rem !important;
+    }
+}
+
+
+/* ==========================================================================
+   My Posts Page — Mobile Responsive Adjustments
+   (Strictly phone only; hidden on desktop/tablet)
+   ========================================================================== */
+
+/* Always hidden on desktop/tablet by default */
+.btn-mp-create-mobile {
+    display: none;
+}
+
+@media (min-width: 640px) {
+    /* Ensure desktop create post button stays visible; hide mobile + */
+    .btn-mp-create-mobile {
+        display: none !important;
+    }
+    .my-posts-header .header-cta .btn-create-post {
+        display: inline-flex !important;
+    }
+}
+
+@media (max-width: 639px) {
+    /* 1. HEADER & PLUS (+) BUTTON VERTICAL ALIGNMENT WITH "MY POSTS" TITLE */
+    .my-posts-header {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: flex-start !important;
+        justify-content: space-between !important;
+        gap: 0.75rem !important;
+        padding-top: 0.75rem !important;
+        margin-bottom: 1.25rem !important;
+    }
+
+    .my-posts-header .header-titles {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    .my-posts-header .header-titles .page-title,
+    .my-posts-header .page-title {
+        font-size: 1.45rem !important;
+        font-weight: 800 !important;
+        line-height: 1.25 !important;
+        margin-bottom: 0.25rem !important;
+        color: #2D1810 !important;
+    }
+
+    .my-posts-header .header-titles .page-subtitle,
+    .my-posts-header .page-subtitle {
+        font-size: 0.85rem !important;
+        line-height: 1.4 !important;
+        color: #71655B !important;
+        margin: 0 !important;
+    }
+
+    .my-posts-header .header-cta {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.5rem !important;
+        flex-shrink: 0 !important;
+        margin-top: 0.15rem !important;
+    }
+
+    /* Hide full-width text button on mobile */
+    .my-posts-header .header-cta .btn-create-post {
+        display: none !important;
+    }
+
+    /* Compact Drafts button if visible on mobile */
+    .my-posts-header .header-cta .btn-drafts-top {
+        height: 38px !important;
+        padding: 0 0.75rem !important;
+        font-size: 0.8rem !important;
+        gap: 0.35rem !important;
+        border-radius: 0.55rem !important;
+    }
+
+    /* Circular "+" button aligned vertically with "My Posts" header */
+    .btn-mp-create-mobile {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px !important;
+        min-height: 38px !important;
+        border-radius: 50% !important;
+        background: #FDE047 !important;
+        color: #4A2E2B !important;
+        border: 1.5px solid rgba(74, 46, 43, 0.12) !important;
+        cursor: pointer !important;
+        flex-shrink: 0 !important;
+        box-shadow: 0 2px 6px rgba(74, 46, 43, 0.15) !important;
+        transition: transform 0.15s ease, background-color 0.15s ease !important;
+        font-family: inherit !important;
+        margin: 0 !important;
+    }
+
+    .btn-mp-create-mobile:hover {
+        background: #FACC15 !important;
+        color: #382220 !important;
+        transform: scale(1.05) !important;
+    }
+
+    .btn-mp-create-mobile:active {
+        transform: scale(0.96) !important;
+    }
+
+    /* Full-width Tabs Bar with generous breathing room below it */
+    .mp-tabs-wrapper {
+        margin-bottom: 1.35rem !important;
+        width: 100% !important;
+    }
+
+    .mp-tabs-header-row {
+        display: block !important;
+        width: 100% !important;
+        margin-bottom: 1.35rem !important;
+    }
+
+    .mp-tabs-bar {
+        display: flex !important;
+        width: 100% !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* 2. SECTION & ELEMENT SPACING (Breathing room, not cramped) */
+    body.page-my-posts .dashboard-section {
+        margin-bottom: 1.75rem !important;
+    }
+
+    body.page-my-posts .section-title-bar {
+        margin-bottom: 0.75rem !important;
+    }
+
+    body.page-my-posts .section-title-bar h2 {
+        font-size: 0.95rem !important;
+        font-weight: 700 !important;
+        color: #2D1810 !important;
+    }
+
+    /* Table card container styling on mobile */
+    body.page-my-posts .table-card {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+
+    .mobile-card-list {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.75rem !important;
+    }
+
+    /* 2A. "My Active Animal Posts" Cards */
+    .mobile-pet-card {
+        background: #ffffff !important;
+        border: 1px solid #EDE0D2 !important;
+        border-radius: 0.85rem !important;
+        padding: 0.85rem 0.95rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.55rem !important;
+        box-shadow: 0 1px 3px rgba(74, 46, 43, 0.05) !important;
+    }
+
+    .mobile-pet-card .mobile-card-top {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 0.65rem !important;
+    }
+
+    .mobile-pet-card .table-pet-thumb {
+        width: 58px !important;
+        height: 58px !important;
+        min-width: 58px !important;
+        min-height: 58px !important;
+        border-radius: 0.5rem !important;
+        overflow: hidden !important;
+        flex-shrink: 0 !important;
+    }
+
+    .mobile-pet-card .table-pet-thumb img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        border-radius: 0.5rem !important;
+    }
+
+    .mobile-pet-card .mobile-card-info {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    .mobile-pet-card .mobile-card-name {
+        font-size: 0.92rem !important;
+        font-weight: 700 !important;
+        line-height: 1.25 !important;
+        color: #2D1810 !important;
+        margin-bottom: 0.1rem !important;
+    }
+
+    .mobile-pet-card .mobile-card-id {
+        font-size: 0.74rem !important;
+        color: #8C756B !important;
+        margin-bottom: 0.15rem !important;
+    }
+
+    .mobile-pet-card .mobile-card-details {
+        font-size: 0.78rem !important;
+        color: #52473D !important;
+        line-height: 1.35 !important;
+        margin-top: 0.1rem !important;
+    }
+
+    .mobile-pet-card .status-pill {
+        font-size: 0.66rem !important;
+        padding: 0.15rem 0.5rem !important;
+        border-radius: 9999px !important;
+        flex-shrink: 0 !important;
+        align-self: flex-start !important;
+    }
+
+    .mobile-pet-card .mobile-card-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+        padding-top: 0.5rem !important;
+        border-top: 1px solid #F3E8D8 !important;
+        width: 100% !important;
+        margin-top: 0.15rem !important;
+    }
+
+    .mobile-pet-card .mobile-card-actions button,
+    .mobile-pet-card .mobile-card-actions .btn-table-edit,
+    .mobile-pet-card .mobile-card-actions .btn-table-adopt,
+    .mobile-pet-card .mobile-card-actions .btn-table-revert {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        padding: 0.25rem 0.45rem !important;
+        border-radius: 0.5rem !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    .mobile-pet-card .mobile-card-actions .btn-archive-icon-only {
+        flex: 0 0 34px !important;
+        min-width: 34px !important;
+        max-width: 34px !important;
+        width: 34px !important;
+        height: 34px !important;
+        padding: 0 !important;
+        border-radius: 0.5rem !important;
+        justify-content: center !important;
+    }
+
+    /* 2B. "Incoming Adoption Requests" Cards */
+    .mobile-req-card {
+        background: #ffffff !important;
+        border: 1px solid #EDE0D2 !important;
+        border-radius: 0.85rem !important;
+        padding: 0.85rem 0.95rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+        box-shadow: 0 1px 3px rgba(74, 46, 43, 0.05) !important;
+    }
+
+    .mobile-req-top {
+        display: flex !important;
+        align-items: center !important;
+        gap: 0.55rem !important;
+    }
+
+    .mobile-req-avatar {
+        width: 36px !important;
+        height: 36px !important;
+        min-width: 36px !important;
+        min-height: 36px !important;
+        border-radius: 50% !important;
+        font-size: 0.88rem !important;
+        background: #FAF5EE !important;
+        border: 1px solid #EDE0D2 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: #4A2E2B !important;
+        font-weight: 700 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .mobile-req-info {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+    }
+
+    .mobile-req-name {
+        font-size: 0.9rem !important;
+        font-weight: 700 !important;
+        color: #2D1810 !important;
+        line-height: 1.25 !important;
+    }
+
+    .mobile-req-pet {
+        font-size: 0.78rem !important;
+        color: #52473D !important;
+        line-height: 1.35 !important;
+    }
+
+    .mobile-req-meta {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 0.5rem !important;
+        font-size: 0.75rem !important;
+        color: #8C756B !important;
+        margin-top: 0.15rem !important;
+        margin-bottom: 0.15rem !important;
+    }
+
+    .mobile-req-meta .status-pill {
+        font-size: 0.66rem !important;
+        padding: 0.15rem 0.5rem !important;
+        border-radius: 9999px !important;
+    }
+
+    .mobile-req-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+        padding-top: 0.5rem !important;
+        border-top: 1px solid #F3E8D8 !important;
+        width: 100% !important;
+        margin-top: 0.15rem !important;
+    }
+
+    .mobile-req-actions .inline-form,
+    .mobile-req-actions .mobile-req-accept-form {
+        display: flex !important;
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    .mobile-req-actions .inline-form .btn-table-accept,
+    .mobile-req-actions .mobile-req-accept-form .btn-table-accept {
+        width: 100% !important;
+        flex: none !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        padding: 0.25rem 0.45rem !important;
+        border-radius: 0.5rem !important;
+        justify-content: center !important;
+        align-items: center !important;
+        display: inline-flex !important;
+        white-space: nowrap !important;
+        cursor: pointer !important;
+        gap: 0.25rem !important;
+    }
+
+    .mobile-req-actions button,
+    .mobile-req-actions .btn-table-decline,
+    .mobile-req-actions .btn-table-message {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        width: auto !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        padding: 0.25rem 0.45rem !important;
+        border-radius: 0.5rem !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        gap: 0.25rem !important;
+    }
+
+    /* 2C. "My Applications" & Archived Cards */
+    .mobile-app-card {
+        background: #ffffff !important;
+        border: 1px solid #EDE0D2 !important;
+        border-radius: 0.85rem !important;
+        padding: 0.85rem 0.95rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.55rem !important;
+        box-shadow: 0 1px 3px rgba(74, 46, 43, 0.05) !important;
+    }
+
+    .mobile-app-card .mobile-card-thumb {
+        width: 52px !important;
+        height: 52px !important;
+        min-width: 52px !important;
+        min-height: 52px !important;
+        border-radius: 0.5rem !important;
+    }
+
+    .mobile-card-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+        padding-top: 0.5rem !important;
+        border-top: 1px solid #F3E8D8 !important;
+        width: 100% !important;
+        margin-top: 0.15rem !important;
+    }
+
+    .mobile-card-actions button,
+    .mobile-card-actions .btn-table-message,
+    .mobile-card-actions .btn-table-decline,
+    .mobile-card-actions .btn-table-delete,
+    .mobile-card-actions .btn-table-edit,
+    .mobile-card-actions .btn-table-adopt,
+    .mobile-card-actions .btn-table-revert,
+    .mobile-card-actions .btn-table-restore {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        width: auto !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        padding: 0.25rem 0.45rem !important;
+        border-radius: 0.5rem !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* 2D. Comfortable Empty State Cards (Breathing Room & Balanced Proportion) */
+    body.page-my-posts .table-card .empty-state-card {
+        background: #ffffff !important;
+        border: 1px solid #EDE0D2 !important;
+        border-radius: 0.85rem !important;
+        padding: 2.25rem 1.25rem !important;
+        margin: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        box-shadow: 0 1px 3px rgba(74, 46, 43, 0.05) !important;
+    }
+
+    body.page-my-posts .table-card .empty-state-card .empty-icon {
+        margin-bottom: 0.65rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    body.page-my-posts .table-card .empty-state-card .empty-icon svg {
+        width: 40px !important;
+        height: 40px !important;
+        color: #8C756B !important;
+    }
+
+    body.page-my-posts .table-card .empty-state-card h3 {
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        color: #2D1810 !important;
+        margin: 0 0 0.35rem 0 !important;
+        line-height: 1.3 !important;
+    }
+
+    body.page-my-posts .table-card .empty-state-card p {
+        font-size: 0.84rem !important;
+        line-height: 1.45 !important;
+        color: #71655B !important;
+        margin: 0 0 0.25rem 0 !important;
+        max-width: 320px !important;
+    }
+
+    body.page-my-posts .table-card .empty-state-card .btn-create-post-icon {
+        margin-top: 1.15rem !important;
+        width: 46px !important;
+        height: 46px !important;
+        border-radius: 0.65rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+}
+
+
+/* ==========================================================================
+   MOBILE RESPONSIVENESS — Compact Modals & Shrunk Buttons (<= 639px)
+   ========================================================================== */
+
+@media (max-width: 639px) {
+    /* ── 1. MODAL OVERLAY & DIALOG CONTAINERS ────────────────── */
+    .modal-backdrop,
+    .auth-modal-backdrop {
+        padding: 0.5rem !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Shrink dialog boxes: moderate width & compact padding */
+    .modal-dialog:not(.auth-modal-dialog),
+    .create-post-dialog,
+    .pet-details-dialog,
+    .modal-dialog.pet-details-dialog,
+    .verify-modal-dialog,
+    .msg-action-modal-dialog,
+    #adoption-request-modal .modal-dialog,
+    #create-post-modal .modal-dialog,
+    #edit-post-modal .modal-dialog,
+    #confirm-logout-modal .modal-dialog,
+    #confirm-admin-logout-modal .modal-dialog,
+    #confirm-close-create-modal .modal-dialog,
+    #confirm-close-edit-modal .modal-dialog,
+    #confirm-delete-draft-modal .modal-dialog,
+    #deleteMessageModal .modal-dialog,
+    #deleteConversationModal .modal-dialog {
+        width: 100% !important;
+        max-width: min(94vw, 430px) !important;
+        max-height: 88vh !important;
+        max-height: 88dvh !important;
+        padding: 1rem 0.85rem !important;
+        border-radius: 0.95rem !important;
+        box-shadow: 0 15px 35px rgba(45, 27, 25, 0.25) !important;
+        overflow-y: auto !important;
+        margin: auto !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Slightly wider allowance for rich content modals */
+    #create-post-modal .modal-dialog,
+    #edit-post-modal .modal-dialog,
+    .pet-details-dialog,
+    .modal-dialog.pet-details-dialog {
+        max-width: min(94vw, 520px) !important;
+    }
+
+
+    /* Compact modal close button */
+    .modal-close-btn {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        top: 0.6rem !important;
+        right: 0.6rem !important;
+        font-size: 0.95rem !important;
+        box-shadow: 0 1px 4px rgba(74, 46, 43, 0.1) !important;
+    }
+
+    .modal-close-icon,
+    .modal-close-btn svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    /* ── 2. MODAL HEADERS & TYPOGRAPHY ───────────────────────── */
+    .create-modal-header,
+    .pet-details-header,
+    .auth-header,
+    #profile-modal .auth-header,
+    #adoption-request-modal > .modal-dialog > div:first-of-type {
+        margin-bottom: 0.65rem !important;
+        padding-bottom: 0.35rem !important;
+        padding-right: 2rem !important;
+    }
+
+    .modal-title,
+    .create-modal-title,
+    .pet-modal-title,
+    .auth-header h2,
+    #login-modal-title,
+    #register-modal-title,
+    #profile-modal-title,
+    #adopt-modal-title,
+    #confirm-close-title {
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        line-height: 1.25 !important;
+        margin-bottom: 0.2rem !important;
+    }
+
+    .create-modal-title,
+    .pet-modal-title {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 0.4rem !important;
+    }
+
+    .modal-title svg,
+    .create-modal-title svg,
+    .auth-header svg {
+        width: 17px !important;
+        height: 17px !important;
+    }
+
+    .create-modal-subtitle,
+    .pet-modal-subtitle,
+    .auth-header p,
+    #profile-modal .auth-header p,
+    #adoption-request-modal p {
+        font-size: 0.76rem !important;
+        line-height: 1.35 !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    /* ── 3. MODAL FORMS, INPUTS & DROPZONES ───────────────────── */
+    .form-section {
+        margin-bottom: 0.65rem !important;
+    }
+
+    .form-group {
+        margin-bottom: 0.5rem !important;
+    }
+
+    .form-label,
+    .form-label.font-bold {
+        font-size: 0.76rem !important;
+        margin-bottom: 0.2rem !important;
+    }
+
+    /* Shrunk photo dropzone */
+    .upload-dropzone {
+        padding: 0.65rem 0.5rem !important;
+        border-radius: 0.65rem !important;
+    }
+
+    .upload-dropzone .upload-icon svg {
+        width: 24px !important;
+        height: 24px !important;
+        margin-bottom: 0.15rem !important;
+    }
+
+    .upload-title {
+        font-size: 0.76rem !important;
+        margin-bottom: 0.1rem !important;
+    }
+
+    .upload-hint {
+        font-size: 0.65rem !important;
+    }
+
+    /* Shrunk form inputs & selects */
+    .modal-dialog input.form-control,
+    .modal-dialog select.form-select-styled,
+    .modal-dialog .custom-select-trigger,
+    #adoption-request-modal input.form-control {
+        height: 36px !important;
+        min-height: 36px !important;
+        padding: 0.35rem 0.65rem !important;
+        border-radius: 0.5rem !important;
+        font-size: 16px !important;
+    }
+
+    .modal-dialog textarea.form-control,
+    .modal-dialog textarea.textarea-field,
+    #adoption-request-modal textarea.form-control {
+        min-height: 56px !important;
+        padding: 0.4rem 0.65rem !important;
+        border-radius: 0.5rem !important;
+    }
+
+    /* Pet details modal compact elements */
+    .pet-photo-frame {
+        height: 165px !important;
+        border-radius: 0.65rem !important;
+    }
+
+    .pet-info-grid {
+        gap: 0.35rem !important;
+    }
+
+    .info-cell {
+        padding: 0.3rem 0.5rem !important;
+        border-radius: 0.4rem !important;
+    }
+
+    .info-cell-label {
+        font-size: 0.62rem !important;
+    }
+
+    .info-cell-val {
+        font-size: 0.78rem !important;
+    }
+
+    .health-status-box {
+        padding: 0.35rem 0.55rem !important;
+    }
+
+    .health-status-text {
+        font-size: 0.78rem !important;
+    }
+
+    .story-display-box {
+        padding: 0.4rem 0.55rem !important;
+        max-height: 85px !important;
+    }
+
+    .story-display-text {
+        font-size: 0.78rem !important;
+        line-height: 1.35 !important;
+    }
+
+    .pet-rescuer-card {
+        padding: 0.4rem 0.55rem !important;
+        margin-top: 0.4rem !important;
+    }
+
+    .rescuer-name {
+        font-size: 0.82rem !important;
+    }
+
+    /* Confirmation modal icons & paragraphs */
+    .modal-dialog > div[style*="border-radius: 50%"],
+    .modal-dialog div[style*="width: 56px"][style*="height: 56px"],
+    .modal-dialog div[style*="width: 52px"][style*="height: 52px"] {
+        width: 38px !important;
+        height: 38px !important;
+        margin-bottom: 0.55rem !important;
+    }
+
+    .modal-dialog div[style*="border-radius: 50%"] svg {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .modal-dialog p[style*="margin: 0 0 1.5rem 0"],
+    .modal-dialog p[style*="color: #52473D"] {
+        font-size: 0.78rem !important;
+        line-height: 1.35 !important;
+        margin-bottom: 0.75rem !important;
+    }
+
+    /* ── 4. SHRUNK BUTTONS (MODALS & MOBILE-WIDE) ─────────────── */
+    /* Modal footer containers */
+    .create-modal-footer,
+    .pet-modal-footer,
+    .pet-modal-actions,
+    .profile-modal-actions,
+    #adoption-request-modal div[style*="border-top: 1px solid"] {
+        margin-top: 0.65rem !important;
+        padding-top: 0.55rem !important;
+        gap: 0.45rem !important;
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+
+    /* Scaled down modal buttons & primary buttons */
+    .modal-dialog button,
+    .modal-dialog .btn,
+    .modal-dialog a[class*="btn"],
+    .btn-submit-post,
+    .btn-draft,
+    .btn-submit-auth,
+    .btn-login-to-adopt,
+    .btn-contact-poster,
+    .btn-request-adopt,
+    .filter-sheet-apply,
+    .btn-modal,
+    .btn-modal-danger,
+    .btn-modal-cancel,
+    .btn-confirm,
+    .btn-cancel,
+    #adoption-request-modal button[type="submit"],
+    #adoption-request-modal button[type="button"] {
+        height: 34px !important;
+        min-height: 34px !important;
+        padding: 0.25rem 0.65rem !important;
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        border-radius: 0.5rem !important;
+        gap: 0.35rem !important;
+        flex: 1 1 0 !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+    }
+
+    /* Icons inside buttons */
+    .modal-dialog button svg,
+    .btn-submit-post svg,
+    .btn-draft svg,
+    .btn-submit-auth svg,
+    .btn-contact-poster svg,
+    .btn-request-adopt svg,
+    .btn-login-to-adopt svg,
+    #adoption-request-modal button svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    /* Vertically stacked confirmation buttons */
+    .modal-dialog div[style*="flex-direction: column"] button {
+        height: 33px !important;
+        min-height: 33px !important;
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.78rem !important;
+        margin-bottom: 0 !important;
+        flex: none !important;
+        width: 100% !important;
+    }
+
+    /* Auth modal footer link */
+    .auth-footer {
+        margin-top: 0.65rem !important;
+        padding-top: 0.45rem !important;
+        font-size: 0.76rem !important;
+    }
+
+    /* ── 5. CONFIRMATION & LOGOUT MODALS SPECIFICS ────────────── */
+    #confirm-logout-modal .modal-dialog,
+    #confirm-admin-logout-modal .modal-dialog,
+    #confirm-close-profile-modal > div,
+    [id^="confirm-"] .modal-dialog,
+    #deleteMessageModal .modal-dialog,
+    #deleteConversationModal .modal-dialog {
+        max-width: min(88vw, 320px) !important;
+        padding: 1.15rem 1rem 1rem !important;
+        border-radius: 0.85rem !important;
+        text-align: center !important;
+    }
+
+    #confirm-logout-modal .modal-dialog > div:first-child,
+    #confirm-admin-logout-modal .modal-dialog > div:first-child,
+    #confirm-close-profile-modal div[style*="border-radius: 50%"],
+    [id^="confirm-"] .modal-dialog div[style*="border-radius: 50%"],
+    #deleteMessageModal .modal-dialog div[style*="border-radius: 50%"],
+    #deleteConversationModal .modal-dialog div[style*="border-radius: 50%"] {
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        min-height: 40px !important;
+        margin: 0 auto 0.55rem auto !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    #confirm-logout-modal .modal-dialog > div:first-child svg,
+    #confirm-admin-logout-modal .modal-dialog > div:first-child svg,
+    #confirm-close-profile-modal div[style*="border-radius: 50%"] svg,
+    [id^="confirm-"] .modal-dialog div[style*="border-radius: 50%"] svg,
+    #deleteMessageModal .modal-dialog div[style*="border-radius: 50%"] svg,
+    #deleteConversationModal .modal-dialog div[style*="border-radius: 50%"] svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    #confirm-logout-title,
+    #confirm-admin-logout-title,
+    #confirm-close-profile-modal h3,
+    [id^="confirm-"] .modal-dialog h3,
+    #deleteMessageModal .modal-dialog h3,
+    #deleteConversationModal .modal-dialog h3 {
+        font-size: 1.05rem !important;
+        font-weight: 700 !important;
+        color: #4A2E2B !important;
+        margin: 0 0 0.25rem 0 !important;
+    }
+
+    #confirm-logout-modal .modal-dialog p,
+    #confirm-admin-logout-modal .modal-dialog p,
+    #confirm-close-profile-modal p,
+    [id^="confirm-"] .modal-dialog p,
+    #deleteMessageModal .modal-dialog p,
+    #deleteConversationModal .modal-dialog p {
+        font-size: 0.78rem !important;
+        color: #52473D !important;
+        line-height: 1.35 !important;
+        margin: 0 auto 0.85rem auto !important;
+        max-width: 260px !important;
+    }
+
+    /* Keep confirm action buttons side-by-side in a balanced row */
+    #confirm-logout-modal .modal-dialog > div:last-child,
+    #confirm-admin-logout-modal .modal-dialog > div:last-child,
+    #confirm-close-profile-modal > div > div:last-child,
+    [id^="confirm-"] .modal-dialog > div:last-child,
+    #deleteMessageModal .modal-dialog > div:last-child,
+    #deleteConversationModal .modal-dialog > div:last-child {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 0.45rem !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    #confirm-admin-logout-modal #admin-logout-form {
+        flex: 1 1 0 !important;
+        display: flex !important;
+        margin: 0 !important;
+        width: auto !important;
+    }
+
+    #confirm-logout-modal .modal-dialog button,
+    #confirm-admin-logout-modal .modal-dialog button,
+    #confirm-close-profile-modal button,
+    [id^="confirm-"] .modal-dialog button,
+    #deleteMessageModal .modal-dialog button,
+    #deleteConversationModal .modal-dialog button {
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        border-radius: 0.5rem !important;
+        gap: 0.35rem !important;
+        white-space: nowrap !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    #confirm-logout-modal .modal-dialog button svg,
+    #confirm-admin-logout-modal .modal-dialog button svg,
+    #confirm-close-profile-modal button svg,
+    [id^="confirm-"] .modal-dialog button svg,
+    #deleteMessageModal .modal-dialog button svg,
+    #deleteConversationModal .modal-dialog button svg {
+        width: 13px !important;
+        height: 13px !important;
+    }
+
+    /* ── 6. LOGIN & REGISTER AUTH MODALS SPECIFICS ───────────── */
+    #login-modal .modal-dialog,
+    #register-modal .modal-dialog,
+    #profile-modal .modal-dialog,
+    .auth-modal-dialog {
+        background: transparent !important;
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        width: 100% !important;
+        max-width: min(92vw, 360px) !important;
+        margin: auto !important;
+        position: relative !important;
+    }
+
+    #login-modal .auth-card-modal,
+    #register-modal .auth-card-modal,
+    .auth-card-modal {
+        background: #FFFFFF !important;
+        border-radius: 1.15rem !important;
+        padding: 1.45rem 1.25rem 1.15rem !important;
+        box-shadow: 0 20px 45px rgba(45, 27, 25, 0.28) !important;
+        border: 1px solid #EDE0D2 !important;
+        position: relative !important;
+        width: 100% !important;
+        max-height: 88vh !important;
+        max-height: 88dvh !important;
+        overflow-y: auto !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+    }
+
+    #login-modal .modal-close-btn,
+    #register-modal .modal-close-btn,
+    .auth-modal-dialog .modal-close-btn {
+        position: absolute !important;
+        top: 0.85rem !important;
+        right: 0.85rem !important;
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        border-radius: 50% !important;
+        background: #FAF6EE !important;
+        border: 1px solid rgba(74, 46, 43, 0.14) !important;
+        color: #4A2E2B !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        z-index: 30 !important;
+        cursor: pointer !important;
+        padding: 0 !important;
+        box-shadow: 0 1px 4px rgba(74, 46, 43, 0.1) !important;
+    }
+
+    #login-modal .modal-close-btn:hover,
+    #register-modal .modal-close-btn:hover {
+        background: #FDE047 !important;
+    }
+
+    #login-modal .modal-close-icon,
+    #register-modal .modal-close-icon,
+    .auth-modal-dialog .modal-close-icon,
+    #login-modal .modal-close-btn svg,
+    #register-modal .modal-close-btn svg {
+        width: 14px !important;
+        height: 14px !important;
+        stroke-width: 2.2 !important;
+        color: #4A2E2B !important;
+    }
+
+    #login-modal .auth-header,
+    #register-modal .auth-header {
+        margin-bottom: 0.85rem !important;
+        padding: 0 1.75rem !important;
+        text-align: center !important;
+    }
+
+    #login-modal-title,
+    #register-modal-title {
+        font-size: 1.18rem !important;
+        font-weight: 800 !important;
+        color: #4A2E2B !important;
+        margin: 0 0 0.2rem 0 !important;
+        line-height: 1.25 !important;
+    }
+
+    #login-modal .auth-header p,
+    #register-modal .auth-header p {
+        font-size: 0.78rem !important;
+        color: #8C756B !important;
+        line-height: 1.35 !important;
+        margin: 0 !important;
+    }
+
+    #login-modal .auth-form,
+    #register-modal .auth-form {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.65rem !important;
+        width: 100% !important;
+    }
+
+    #login-modal .form-group,
+    #register-modal .form-group {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.25rem !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    #login-modal .form-group label,
+    #register-modal .form-group label {
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        color: #4A2E2B !important;
+        margin: 0 !important;
+    }
+
+    #login-modal .form-control,
+    #register-modal .form-control {
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 0.4rem 0.75rem !important;
+        font-size: 16px !important;
+        border: 1.5px solid #D5C2B1 !important;
+        border-radius: 0.55rem !important;
+        background: #FFFFFF !important;
+        color: #2D1810 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    #login-modal .password-input-wrapper,
+    #register-modal .password-input-wrapper {
+        position: relative !important;
+        width: 100% !important;
+    }
+
+    #login-modal .password-input-wrapper input,
+    #register-modal .password-input-wrapper input {
+        padding-right: 2.5rem !important;
+    }
+
+    #login-modal .password-toggle-btn,
+    #register-modal .password-toggle-btn {
+        position: absolute !important;
+        right: 0 !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        width: 38px !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: #8C756B !important;
+        cursor: pointer !important;
+    }
+
+    #login-modal .password-toggle-btn svg,
+    #register-modal .password-toggle-btn svg {
+        width: 17px !important;
+        height: 17px !important;
+        stroke-width: 2 !important;
+    }
+
+    #login-modal .form-group-checkbox,
+    #register-modal .form-group-checkbox {
+        margin: 0.15rem 0 0.25rem 0 !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    #login-modal .checkbox-label,
+    #register-modal .checkbox-label {
+        font-size: 0.78rem !important;
+        color: #52473D !important;
+        gap: 0.45rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        cursor: pointer !important;
+    }
+
+    #login-modal .checkbox-label input[type="checkbox"],
+    #register-modal .checkbox-label input[type="checkbox"] {
+        width: 15px !important;
+        height: 15px !important;
+        accent-color: #4A2E2B !important;
+        margin: 0 !important;
+    }
+
+    #login-modal .btn-submit-auth,
+    #register-modal .btn-submit-auth {
+        height: 38px !important;
+        min-height: 38px !important;
+        font-size: 0.88rem !important;
+        font-weight: 700 !important;
+        padding: 0.4rem 0.75rem !important;
+        border-radius: 0.55rem !important;
+        background-color: #4A2E2B !important;
+        color: #FFFFFF !important;
+        width: 100% !important;
+        margin-top: 0.25rem !important;
+        border: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+    }
+
+    #login-modal .btn-submit-auth:active,
+    #register-modal .btn-submit-auth:active {
+        background-color: #382220 !important;
+    }
+
+    #login-modal .auth-footer,
+    #register-modal .auth-footer {
+        margin-top: 0.75rem !important;
+        padding-top: 0.65rem !important;
+        font-size: 0.78rem !important;
+        color: #8C756B !important;
+        border-top: 1px solid #F3E8D8 !important;
+        text-align: center !important;
+    }
+
+    #login-modal .auth-footer a,
+    #register-modal .auth-footer a {
+        color: #4A2E2B !important;
+        font-weight: 700 !important;
+    }
+
+    /* Navbar Guest Login Pill Button Alignment */
+    .nav-btn-white {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        line-height: 1 !important;
+        vertical-align: middle !important;
+        height: 32px !important;
+        min-height: 32px !important;
+        padding: 0 0.95rem !important;
+        font-size: 0.84rem !important;
+        font-weight: 700 !important;
+        border-radius: 9999px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+    }
+
+    /* ── 7. EDIT PROFILE DETAILS MODAL SPECIFICS ────────────── */
+    #profile-modal .modal-dialog {
+        max-width: min(92vw, 400px) !important;
+    }
+
+    #profile-modal .auth-card-modal {
+        padding: 1.35rem 1.15rem 1.15rem !important;
+        border-radius: 1.15rem !important;
+        max-height: 88vh !important;
+        max-height: 88dvh !important;
+        overflow-y: auto !important;
+    }
+
+    #profile-modal .auth-header {
+        margin-bottom: 0.75rem !important;
+        padding: 0 1.5rem !important;
+        text-align: center !important;
+    }
+
+    #profile-modal .auth-header div[style*="border-radius: 50%"] {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        margin: 0 auto 0.45rem auto !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    #profile-modal .auth-header div[style*="border-radius: 50%"] svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    #profile-modal-title {
+        font-size: 1.15rem !important;
+        font-weight: 800 !important;
+        color: #4A2E2B !important;
+        margin: 0 0 0.15rem 0 !important;
+        line-height: 1.25 !important;
+    }
+
+    #profile-modal .auth-header p {
+        font-size: 0.76rem !important;
+        color: #8C756B !important;
+        line-height: 1.3 !important;
+        margin: 0 !important;
+    }
+
+    #profile-modal .form-group {
+        margin-bottom: 0.65rem !important;
+        text-align: left !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.2rem !important;
+    }
+
+    #profile-modal label {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        text-align: left !important;
+        gap: 0.35rem !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        color: #4A2E2B !important;
+        margin: 0 0 0.15rem 0 !important;
+        width: 100% !important;
+    }
+
+    #profile-modal label svg {
+        width: 13px !important;
+        height: 13px !important;
+        min-width: 13px !important;
+        min-height: 13px !important;
+        stroke-width: 2 !important;
+        color: #4A2E2B !important;
+        display: inline-block !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+    }
+
+    #profile-modal label span {
+        text-align: left !important;
+        font-size: 0.78rem !important;
+        line-height: 1.2 !important;
+    }
+
+    #profile-modal .form-control {
+        height: 38px !important;
+        min-height: 38px !important;
+        padding: 0.4rem 0.75rem !important;
+        font-size: 16px !important;
+        border: 1.5px solid #D5C2B1 !important;
+        border-radius: 0.55rem !important;
+        background: #FFFFFF !important;
+        color: #2D1810 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    #profile-modal .password-input-wrapper {
+        position: relative !important;
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+    }
+
+    #profile-modal .password-input-wrapper input {
+        padding-right: 2.5rem !important;
+        width: 100% !important;
+    }
+
+    #profile-modal .password-toggle-btn {
+        position: absolute !important;
+        right: 0.2rem !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        width: 34px !important;
+        height: 34px !important;
+        min-width: 34px !important;
+        min-height: 34px !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        border: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: #8C756B !important;
+        cursor: pointer !important;
+        z-index: 5 !important;
+    }
+
+    #profile-modal .password-toggle-btn svg {
+        width: 16px !important;
+        height: 16px !important;
+        stroke-width: 2 !important;
+    }
+
+    /* Change Password section divider */
+    #profile-modal div[style*="border-top: 1px solid #EADDCF"] {
+        border-top: 1px solid #F3E8D8 !important;
+        padding-top: 0.7rem !important;
+        margin-top: 0.7rem !important;
+        text-align: left !important;
+    }
+
+    #profile-modal div[style*="border-top: 1px solid #EADDCF"] > div:first-child {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 0.35rem !important;
+        margin-bottom: 0.15rem !important;
+        text-align: left !important;
+    }
+
+    #profile-modal div[style*="border-top: 1px solid #EADDCF"] > div:first-child svg {
+        width: 14px !important;
+        height: 14px !important;
+        stroke-width: 2 !important;
+        color: #78350F !important;
+        flex-shrink: 0 !important;
+        display: inline-block !important;
+    }
+
+    #profile-modal div[style*="border-top: 1px solid #EADDCF"] > div:first-child span {
+        font-weight: 700 !important;
+        font-size: 0.85rem !important;
+        color: #4A2E2B !important;
+    }
+
+    #profile-modal div[style*="border-top: 1px solid #EADDCF"] > p {
+        font-size: 0.72rem !important;
+        color: #8C756B !important;
+        margin: 0 0 0.65rem 0 !important;
+        text-align: left !important;
+        line-height: 1.35 !important;
+    }
+
+    /* Action Buttons (Cancel / Save Changes) */
+    #profile-modal .profile-modal-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 0.45rem !important;
+        justify-content: flex-end !important;
+        align-items: center !important;
+        border-top: 1px solid #F3E8D8 !important;
+        padding-top: 0.75rem !important;
+        margin-top: 0.75rem !important;
+        width: 100% !important;
+    }
+
+    #profile-modal .profile-modal-actions button {
+        flex: 1 1 0 !important;
+        width: 100% !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        padding: 0.35rem 0.65rem !important;
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+        border-radius: 0.55rem !important;
+        gap: 0.35rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+    }
+
+    #profile-modal .profile-modal-actions button svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    /* ── 8. ADMIN DASHBOARD MOBILE REFINEMENTS ─────────────── */
+    /* Content Padding */
+    .admin-content {
+        padding: 0.95rem 0.85rem !important;
+    }
+
+    /* Dashboard Header */
+    .dashboard-header-block {
+        margin-bottom: 0.85rem !important;
+    }
+
+    .dashboard-heading {
+        font-size: 1.35rem !important;
+        font-weight: 800 !important;
+        color: #1F2937 !important;
+        margin: 0 0 0.15rem 0 !important;
+        letter-spacing: -0.015em !important;
+    }
+
+    .dashboard-subheading {
+        font-size: 0.78rem !important;
+        color: #6B7280 !important;
+        margin: 0 !important;
+    }
+
+    /* Top Row Stat Cards (2 columns, compact & scaled down) */
+    .admin-stats-row {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.55rem !important;
+        margin-bottom: 0.85rem !important;
+    }
+
+    .stat-card-custom {
+        padding: 0.75rem 0.85rem !important;
+        min-height: unset !important;
+        border-radius: 0.85rem !important;
+        box-sizing: border-box !important;
+    }
+
+    .card-head-row {
+        margin-bottom: 0.2rem !important;
+    }
+
+    .card-title-text {
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+    }
+
+    .card-head-icon {
+        width: 24px !important;
+        height: 24px !important;
+        min-width: 24px !important;
+        min-height: 24px !important;
+        border-radius: 0.45rem !important;
+    }
+
+    .card-head-icon svg {
+        width: 13px !important;
+        height: 13px !important;
+    }
+
+    .stat-big-num {
+        font-size: 1.65rem !important;
+        font-weight: 800 !important;
+        line-height: 1 !important;
+        margin: 0.25rem 0 0.55rem 0 !important;
+    }
+
+    .stat-footer-pill {
+        padding: 0.2rem 0.55rem !important;
+        font-size: 0.68rem !important;
+        font-weight: 700 !important;
+        border-radius: 9999px !important;
+        line-height: 1.2 !important;
+    }
+
+    /* Middle Main Grid (Average posts & Dogs vs Cats) */
+    .admin-main-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.85rem !important;
+        margin-bottom: 0.85rem !important;
+    }
+
+    .average-posts-card,
+    .dogs-cats-side-card,
+    .analytics-card {
+        padding: 0.95rem 0.85rem !important;
+        border-radius: 0.95rem !important;
+        box-sizing: border-box !important;
+    }
+
+    .minimal-card-header {
+        margin-bottom: 0.65rem !important;
+        gap: 0.45rem !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+
+    .minimal-card-title {
+        font-size: 1.12rem !important;
+        font-weight: 800 !important;
+        color: #1F2937 !important;
+        margin: 0 0 0.15rem 0 !important;
+    }
+
+    .minimal-card-subtitle {
+        font-size: 0.76rem !important;
+        color: #6B7280 !important;
+        margin: 0 !important;
+    }
+
+    /* Time Range Filter Pills */
+    .filter-pills-container {
+        display: flex !important;
+        width: 100% !important;
+        justify-content: space-between !important;
+        padding: 0.18rem !important;
+        gap: 0.2rem !important;
+        box-sizing: border-box !important;
+    }
+
+    .filter-pill-btn {
+        flex: 1 1 0 !important;
+        text-align: center !important;
+        padding: 0.3rem 0.45rem !important;
+        font-size: 0.74rem !important;
+        font-weight: 600 !important;
+        white-space: nowrap !important;
+    }
+
+    /* Bar Chart Height and Proportions */
+    .minimal-bar-chart-wrap {
+        height: 175px !important;
+        width: 100% !important;
+    }
+
+    /* Donut Species Section */
+    .species-header-group {
+        margin-bottom: 0.65rem !important;
+    }
+
+    .donut-centered-container {
+        gap: 0.65rem !important;
+        padding: 0.2rem 0 !important;
+    }
+
+    .donut-svg-wrapper {
+        width: 110px !important;
+        height: 110px !important;
+    }
+
+    .donut-center-number {
+        font-size: 1.45rem !important;
+    }
+
+    .donut-center-label {
+        font-size: 0.68rem !important;
+    }
+
+    .donut-bottom-legend {
+        gap: 0.75rem !important;
+    }
+
+    .legend-chip {
+        font-size: 0.74rem !important;
+        gap: 0.35rem !important;
+    }
+
+    /* "By status" Progress Row */
+    .species-bottom-section {
+        padding-top: 0.75rem !important;
+        margin-top: 0.75rem !important;
+        gap: 0.45rem !important;
+    }
+
+    .by-status-heading {
+        font-size: 0.92rem !important;
+        font-weight: 800 !important;
+    }
+
+    .status-multi-bar {
+        height: 9px !important;
+        margin-bottom: 0.35rem !important;
+    }
+
+    .status-data-row {
+        font-size: 0.76rem !important;
+    }
+
+    /* Bottom Cards: Attention & Activity (Proportional typography matching other cards) */
+    .admin-bottom-cards-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+        margin-bottom: 1.25rem !important;
+    }
+
+    .attention-card,
+    .activity-card {
+        padding: 0.85rem 0.85rem !important;
+        border-radius: 0.85rem !important;
+        box-sizing: border-box !important;
+    }
+
+    .attention-card .card-header-simple,
+    .activity-card .card-header-simple {
+        margin-bottom: 0.5rem !important;
+    }
+
+    .attention-card .section-title,
+    .activity-card .section-title {
+        font-size: 0.95rem !important;
+        font-weight: 800 !important;
+        color: #1F2937 !important;
+        margin: 0 0 0.1rem 0 !important;
+        letter-spacing: -0.01em !important;
+    }
+
+    .attention-card .section-subtitle,
+    .activity-card .section-subtitle {
+        font-size: 0.72rem !important;
+        color: #6B7280 !important;
+        margin: 0 !important;
+        font-weight: 500 !important;
+    }
+
+    .attention-items-list {
+        gap: 0.45rem !important;
+    }
+
+    .attention-row-item {
+        padding: 0.48rem 0.65rem !important;
+        border-radius: 0.65rem !important;
+        gap: 0.55rem !important;
+        background-color: #FFFDF9 !important;
+        border: 1px solid #FEF3C7 !important;
+    }
+
+    .attention-icon-box {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        min-height: 28px !important;
+        border-radius: 0.45rem !important;
+    }
+
+    .attention-icon-box svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .attention-item-info {
+        flex: 1 !important;
+        min-width: 0 !important;
+    }
+
+    .attention-item-title {
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        color: #1F2937 !important;
+        margin: 0 0 0.1rem 0 !important;
+        line-height: 1.25 !important;
+    }
+
+    .attention-item-sub {
+        font-size: 0.68rem !important;
+        color: #6B7280 !important;
+        margin: 0 !important;
+        line-height: 1.3 !important;
+    }
+
+    .btn-attention-action {
+        padding: 0.22rem 0.65rem !important;
+        font-size: 0.72rem !important;
+        font-weight: 700 !important;
+        border-radius: 0.5rem !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+        flex-shrink: 0 !important;
+    }
+
+    .attention-empty-state,
+    .activity-empty-state {
+        padding: 0.95rem 0.75rem !important;
+        gap: 0.35rem !important;
+    }
+
+    .attention-empty-icon,
+    .activity-empty-icon {
+        width: 34px !important;
+        height: 34px !important;
+        margin-bottom: 0.3rem !important;
+    }
+
+    .attention-empty-icon svg,
+    .activity-empty-icon svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .attention-empty-title {
+        font-size: 0.8rem !important;
+        font-weight: 700 !important;
+    }
+
+    .attention-empty-sub {
+        font-size: 0.68rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .activity-item {
+        padding: 0.35rem 0 !important;
+        gap: 0.5rem !important;
+    }
+
+    .timeline-dot {
+        width: 7px !important;
+        height: 7px !important;
+    }
+
+    .timeline-text {
+        font-size: 0.76rem !important;
+    }
+
+    .timeline-time {
+        font-size: 0.66rem !important;
+    }
+
+    /* ── 9. ADMIN POSTS MANAGEMENT MOBILE REFINEMENTS ─────── */
+    /* Header Block */
+    .posts-header-block {
+        margin-bottom: 0.75rem !important;
+    }
+
+    .posts-heading {
+        font-size: 1.35rem !important;
+        font-weight: 800 !important;
+        color: #2D1810 !important;
+        margin: 0 0 0.15rem 0 !important;
+        letter-spacing: -0.015em !important;
+    }
+
+    .posts-subheading {
+        font-size: 0.78rem !important;
+        color: #6B7280 !important;
+        margin: 0 !important;
+        line-height: 1.35 !important;
+    }
+
+    /* Top Tabs Row with Badges */
+    .posts-tabs-row {
+        display: inline-flex !important;
+        width: auto !important;
+        max-width: 100% !important;
+        padding: 0.22rem 0.28rem !important;
+        gap: 0.25rem !important;
+        margin-bottom: 0.75rem !important;
+        border-radius: 9999px !important;
+        background-color: #FAF5EE !important;
+        border: 1.5px solid #EADDCF !important;
+        box-sizing: border-box !important;
+    }
+
+    .tab-pill {
+        padding: 0.35rem 0.75rem !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        gap: 0.35rem !important;
+        border-radius: 9999px !important;
+        line-height: 1.2 !important;
+    }
+
+    .tab-pill svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .tab-badge {
+        min-width: 1.15rem !important;
+        height: 1.15rem !important;
+        font-size: 0.68rem !important;
+        padding: 0 0.35rem !important;
+        margin-left: 0.25rem !important;
+    }
+
+    /* Filters & Search Box */
+    .posts-filters-form {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 0.45rem !important;
+        margin-bottom: 0.75rem !important;
+        width: 100% !important;
+    }
+
+    .filter-search-box {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+
+    .filter-search-box input {
+        height: 38px !important;
+        min-height: 38px !important;
+        font-size: 0.8rem !important;
+        padding: 0.45rem 0.75rem 0.45rem 2.2rem !important;
+        border-radius: 0.55rem !important;
+        border: 1.5px solid rgba(74, 46, 43, 0.16) !important;
+        box-shadow: 0 1px 3px rgba(74, 46, 43, 0.04) !important;
+        box-sizing: border-box !important;
+    }
+
+    .filter-search-icon {
+        left: 0.75rem !important;
+    }
+
+    .filter-search-icon svg {
+        width: 15px !important;
+        height: 15px !important;
+    }
+
+    .admin-custom-select-group {
+        flex: 1 1 calc(50% - 0.25rem) !important;
+        min-width: 0 !important;
+    }
+
+    .admin-custom-select-trigger {
+        width: 100% !important;
+        height: 38px !important;
+        min-height: 38px !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        padding: 0.45rem 0.65rem !important;
+        border-radius: 0.55rem !important;
+        gap: 0.35rem !important;
+        border: 1.5px solid rgba(74, 46, 43, 0.16) !important;
+        box-shadow: 0 1px 3px rgba(74, 46, 43, 0.04) !important;
+        box-sizing: border-box !important;
+    }
+
+    .admin-custom-select-label {
+        font-size: 0.78rem !important;
+    }
+
+    .admin-custom-select-arrow {
+        width: 0.85rem !important;
+        height: 0.85rem !important;
+    }
+
+    .admin-custom-select-dropdown {
+        max-width: 100% !important;
+        min-width: 100% !important;
+        border-radius: 0.65rem !important;
+        padding: 0.25rem !important;
+        font-size: 0.8rem !important;
+    }
+
+    .admin-custom-select-option {
+        padding: 0.45rem 0.65rem !important;
+        font-size: 0.78rem !important;
+        gap: 0.4rem !important;
+    }
+
+    /* Outer Table Wrapper & Cards Container */
+    .posts-table-card {
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    .admin-table-scroll-wrapper {
+        overflow: visible !important;
+    }
+
+    .posts-table-card > div:only-child:not(.admin-table-scroll-wrapper) {
+        background: #FFFFFF !important;
+        border: 1px solid #EADDCF !important;
+        border-radius: 0.95rem !important;
+        box-shadow: 0 1px 4px rgba(74, 46, 43, 0.04) !important;
+        padding: 2.25rem 1.25rem !important;
+    }
+
+    /* Admin Pet Cards */
+    .admin-mobile-cards {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.65rem !important;
+        padding: 0 0 1.5rem 0 !important;
+        width: 100% !important;
+    }
+
+    .admin-pet-card {
+        background: #FFFFFF !important;
+        border: 1px solid #EADDCF !important;
+        border-radius: 0.95rem !important;
+        padding: 0.8rem 0.85rem !important;
+        gap: 0.55rem !important;
+        box-shadow: 0 1px 4px rgba(74, 46, 43, 0.04) !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+    }
+
+    .admin-card-top {
+        display: flex !important;
+        gap: 0.75rem !important;
+        align-items: flex-start !important;
+    }
+
+    .admin-card-thumb {
+        width: 68px !important;
+        height: 68px !important;
+        min-width: 68px !important;
+        min-height: 68px !important;
+        border-radius: 0.65rem !important;
+        background-color: #FAF5EE !important;
+        border: 1px solid #EADDCF !important;
+        flex-shrink: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .admin-card-thumb img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+    }
+
+    .admin-card-thumb svg {
+        width: 28px !important;
+        height: 28px !important;
+    }
+
+    .admin-card-info {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+    }
+
+    .admin-card-name {
+        font-size: 0.95rem !important;
+        font-weight: 800 !important;
+        color: #2D1810 !important;
+        line-height: 1.25 !important;
+        margin: 0 0 0.1rem 0 !important;
+        word-break: break-word !important;
+    }
+
+    .admin-card-id {
+        font-size: 0.7rem !important;
+        font-weight: 600 !important;
+        color: #9CA3AF !important;
+        margin-bottom: 0.2rem !important;
+        line-height: 1.1 !important;
+    }
+
+    .admin-card-details {
+        font-size: 0.76rem !important;
+        color: #52473D !important;
+        line-height: 1.35 !important;
+    }
+
+    .admin-card-owner {
+        font-size: 0.72rem !important;
+        color: #71655B !important;
+        margin-top: 0.2rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .admin-card-owner strong {
+        color: #2D1810 !important;
+        font-weight: 700 !important;
+    }
+
+    /* Badges */
+    .admin-card-badges {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.35rem !important;
+        margin: 0.1rem 0 0 0 !important;
+    }
+
+    .badge-verified,
+    .badge-unverified,
+    .badge-available,
+    .badge-pending,
+    .badge-adopted,
+    .badge-archived,
+    .badge-blocked {
+        padding: 0.18rem 0.55rem !important;
+        font-size: 0.7rem !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        border-radius: 9999px !important;
+    }
+
+    /* Card Actions */
+    .admin-card-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 0.45rem !important;
+        border-top: 1px solid #F3E8D8 !important;
+        padding-top: 0.55rem !important;
+        margin-top: 0.15rem !important;
+        width: 100% !important;
+    }
+
+    .admin-card-actions .btn-action-view,
+    .admin-card-actions .btn-action-remove,
+    .admin-card-actions .btn-action-restore,
+    .admin-card-actions .btn-action-delete {
+        flex: 1 1 0 !important;
+        width: 100% !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        border-radius: 0.55rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Pagination */
+    .admin-pagination-wrapper {
+        padding: 0.75rem 0.5rem !important;
+    }
+
+    /* Verify Modal on Mobile */
+    .verify-modal-dialog {
+        padding: 1.15rem 1rem !important;
+        border-radius: 1.15rem !important;
+    }
+
+    .verify-modal-name {
+        font-size: 1.2rem !important;
+    }
+
+    .verify-modal-id {
+        font-size: 0.82rem !important;
+    }
+
+    .verify-modal-img-box {
+        height: 175px !important;
+        margin: 0.75rem 0 !important;
+        border-radius: 0.85rem !important;
+    }
+
+    .verify-modal-details-grid {
+        grid-template-columns: 95px 1fr !important;
+        gap: 0.4rem 0.65rem !important;
+        font-size: 0.8rem !important;
+        margin-bottom: 0.85rem !important;
+    }
+
+    .legit-check-box {
+        padding: 0.75rem 0.85rem !important;
+        margin-bottom: 0.85rem !important;
+        border-radius: 0.75rem !important;
+    }
+
+    .legit-check-title {
+        font-size: 0.84rem !important;
+        margin-bottom: 0.5rem !important;
+    }
+
+    .legit-check-item {
+        font-size: 0.78rem !important;
+        gap: 0.5rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    .verify-modal-actions {
+        margin-top: 0.75rem !important;
+        gap: 0.5rem !important;
+    }
+
+    .verify-modal-actions button {
+        height: 35px !important;
+        min-height: 35px !important;
+        padding: 0.35rem 0.75rem !important;
+        font-size: 0.8rem !important;
+        border-radius: 0.55rem !important;
+    }
+
+    /* ── 10. ADMIN ACCOUNTS MANAGEMENT MOBILE REFINEMENTS ────── */
+    /* Accounts Tabs Row (Fits 100% screen width, no horizontal scroll) */
+    .admin-accounts-tabs-row {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        overflow: hidden !important;
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0.18rem 0.2rem !important;
+        gap: 0.2rem !important;
+        margin-bottom: 0.75rem !important;
+        border-radius: 9999px !important;
+        background-color: #FAF5EE !important;
+        border: 1.5px solid #EADDCF !important;
+        box-sizing: border-box !important;
+    }
+
+    .admin-accounts-tabs-row .tab-pill {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        width: 100% !important;
+        padding: 0.35rem 0.22rem !important;
+        font-size: 0.69rem !important;
+        font-weight: 700 !important;
+        gap: 0.2rem !important;
+        border-radius: 9999px !important;
+        line-height: 1.2 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+        box-sizing: border-box !important;
+    }
+
+    .admin-accounts-tabs-row .tab-pill span:not(.tab-badge) {
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        min-width: 0 !important;
+    }
+
+    .admin-accounts-tabs-row .tab-pill svg {
+        width: 12px !important;
+        height: 12px !important;
+        min-width: 12px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .admin-accounts-tabs-row .tab-badge {
+        min-width: 1.05rem !important;
+        height: 1.05rem !important;
+        font-size: 0.62rem !important;
+        padding: 0 0.22rem !important;
+        margin-left: 0.12rem !important;
+        flex-shrink: 0 !important;
+    }
+
+    @media (max-width: 360px) {
+        .admin-accounts-tabs-row {
+            padding: 0.15rem 0.18rem !important;
+            gap: 0.15rem !important;
+        }
+        .admin-accounts-tabs-row .tab-pill {
+            padding: 0.3rem 0.15rem !important;
+            font-size: 0.65rem !important;
+            gap: 0.15rem !important;
+        }
+        .admin-accounts-tabs-row .tab-pill svg {
+            width: 11px !important;
+            height: 11px !important;
+            min-width: 11px !important;
+        }
+        .admin-accounts-tabs-row .tab-badge {
+            min-width: 0.95rem !important;
+            height: 0.95rem !important;
+            font-size: 0.58rem !important;
+            padding: 0 0.18rem !important;
+        }
+    }
+
+    /* Accounts Empty Boxes */
+    .accounts-empty-box {
+        background: #FFFFFF !important;
+        border: 1px solid #EADDCF !important;
+        border-radius: 0.95rem !important;
+        box-shadow: 0 1px 4px rgba(74, 46, 43, 0.04) !important;
+        padding: 2.25rem 1.25rem !important;
+    }
+
+    /* Accounts User Cards (Matching Pet Cards Proportions) */
+    .admin-user-card {
+        background: #FFFFFF !important;
+        border: 1px solid #EADDCF !important;
+        border-radius: 0.95rem !important;
+        padding: 0.8rem 0.85rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0.55rem !important;
+        box-shadow: 0 1px 4px rgba(74, 46, 43, 0.04) !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+    }
+
+    .admin-user-card-top {
+        display: flex !important;
+        gap: 0.65rem !important;
+        align-items: center !important;
+    }
+
+    .admin-user-avatar {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        min-height: 44px !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 800 !important;
+        font-size: 1.05rem !important;
+        flex-shrink: 0 !important;
+    }
+
+    .admin-user-info {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+    }
+
+    .admin-user-name {
+        font-size: 0.95rem !important;
+        font-weight: 800 !important;
+        color: #2D1810 !important;
+        line-height: 1.25 !important;
+        margin: 0 0 0.1rem 0 !important;
+        word-break: break-word !important;
+    }
+
+    .admin-user-email {
+        font-size: 0.74rem !important;
+        color: #71655B !important;
+        line-height: 1.3 !important;
+        word-break: break-all !important;
+    }
+
+    .admin-user-card-top .badge-available,
+    .admin-user-card-top .badge-blocked,
+    .admin-user-card-top .badge-archived {
+        padding: 0.18rem 0.55rem !important;
+        font-size: 0.7rem !important;
+        font-weight: 700 !important;
+        line-height: 1.2 !important;
+        border-radius: 9999px !important;
+        flex-shrink: 0 !important;
+        align-self: center !important;
+    }
+
+    .admin-user-meta {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 0.35rem 0.5rem !important;
+        align-items: center !important;
+        font-size: 0.72rem !important;
+        color: #71655B !important;
+        line-height: 1.3 !important;
+        margin: 0.05rem 0 0 0 !important;
+    }
+
+    .admin-user-meta strong {
+        color: #2D1810 !important;
+        font-weight: 700 !important;
+    }
+
+    /* Accounts Card Actions */
+    .admin-user-actions {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        gap: 0.45rem !important;
+        border-top: 1px solid #F3E8D8 !important;
+        padding-top: 0.55rem !important;
+        margin-top: 0.15rem !important;
+        width: 100% !important;
+    }
+
+    .admin-user-actions .btn-action-view,
+    .admin-user-actions .btn-action-remove,
+    .admin-user-actions .btn-action-restore,
+    .admin-user-actions .btn-action-delete {
+        flex: 1 1 0 !important;
+        width: 100% !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.78rem !important;
+        font-weight: 700 !important;
+        border-radius: 0.55rem !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        white-space: nowrap !important;
+        box-sizing: border-box !important;
+    }
+
+    /* Accounts Modals Mobile Refinements */
+    #block-modal .modal-dialog,
+    #unblock-modal .modal-dialog,
+    #remove-modal .modal-dialog,
+    #acc-restore-modal .modal-dialog,
+    #delete-modal .modal-dialog {
+        padding: 1.25rem 1.15rem !important;
+        border-radius: 1.15rem !important;
+    }
+
+    #block-modal h3,
+    #unblock-modal h3,
+    #remove-modal h3,
+    #acc-restore-modal h3,
+    #delete-modal h3 {
+        font-size: 1.15rem !important;
+        margin-bottom: 0.45rem !important;
+    }
+
+    #block-modal p,
+    #unblock-modal p,
+    #remove-modal p,
+    #acc-restore-modal p,
+    #delete-modal p {
+        font-size: 0.8rem !important;
+        line-height: 1.4 !important;
+        margin-bottom: 0.85rem !important;
+    }
+
+    #block-modal textarea,
+    #remove-modal textarea,
+    #delete-modal textarea {
+        font-size: 0.8rem !important;
+        padding: 0.5rem 0.65rem !important;
+        border-radius: 0.55rem !important;
+    }
+
+    #block-modal label,
+    #remove-modal label,
+    #delete-modal label {
+        font-size: 0.78rem !important;
+        margin-bottom: 0.3rem !important;
+    }
+
+    #block-modal button,
+    #unblock-modal button,
+    #remove-modal button,
+    #acc-restore-modal button,
+    #delete-modal button {
+        height: 35px !important;
+        min-height: 35px !important;
+        padding: 0.35rem 0.85rem !important;
+        font-size: 0.8rem !important;
+        border-radius: 0.55rem !important;
+    }
+}

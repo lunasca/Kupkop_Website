@@ -23,6 +23,15 @@
                     <x-lucide-plus style="width: 16px; height: 16px; stroke-width: 2.4;" />
                     <span>Create Post</span>
                 </button>
+                <button 
+                    type="button" 
+                    class="btn-mp-create-mobile" 
+                    onclick="openCreatePostModal()" 
+                    title="Create Post" 
+                    aria-label="Create Post"
+                >
+                    <x-lucide-plus style="width: 18px; height: 18px; stroke-width: 2.6;" />
+                </button>
             @endauth
         </div>
     </div>
@@ -50,22 +59,24 @@
          TAB INTERFACE — Tab 1: My Listed Pets | Tab 2: My Applications
     ================================================================ --}}
     <div class="mp-tabs-wrapper">
-        <div class="mp-tabs-bar" role="tablist" aria-label="My Posts Sections">
-            <button class="mp-tab-btn mp-tab-active" id="tab-btn-listed" onclick="switchTab('listed')" type="button" role="tab" aria-selected="true" aria-controls="tab-panel-listed">
-                <x-lucide-paw-print style="width: 16px; height: 16px; stroke-width: 2;" />
-                <span>My Listed Pets</span>
-                <span class="mp-tab-count">{{ $myPets->count() }}</span>
-            </button>
-            <button class="mp-tab-btn" id="tab-btn-applications" onclick="switchTab('applications')" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-applications">
-                <x-lucide-heart style="width: 16px; height: 16px; stroke-width: 2;" />
-                <span>My Applications</span>
-                <span class="mp-tab-count">{{ $myApplications->count() }}</span>
-            </button>
-            <button class="mp-tab-btn" id="tab-btn-archived" onclick="switchTab('archived')" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-archived">
-                <x-lucide-archive style="width: 16px; height: 16px; stroke-width: 2;" />
-                <span>Archived Posts</span>
-                <span class="mp-tab-count">{{ $archivedPets->count() }}</span>
-            </button>
+        <div class="mp-tabs-header-row">
+            <div class="mp-tabs-bar" role="tablist" aria-label="My Posts Sections">
+                <button class="mp-tab-btn mp-tab-active" id="tab-btn-listed" onclick="switchTab('listed')" type="button" role="tab" aria-selected="true" aria-controls="tab-panel-listed">
+                    <x-lucide-paw-print style="width: 16px; height: 16px; stroke-width: 2;" />
+                    <span>My Listed Pets</span>
+                    <span class="mp-tab-count">{{ $myPets->count() }}</span>
+                </button>
+                <button class="mp-tab-btn" id="tab-btn-applications" onclick="switchTab('applications')" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-applications">
+                    <x-lucide-heart style="width: 16px; height: 16px; stroke-width: 2;" />
+                    <span>My Applications</span>
+                    <span class="mp-tab-count">{{ $myApplications->count() }}</span>
+                </button>
+                <button class="mp-tab-btn" id="tab-btn-archived" onclick="switchTab('archived')" type="button" role="tab" aria-selected="false" aria-controls="tab-panel-archived">
+                    <x-lucide-archive style="width: 16px; height: 16px; stroke-width: 2;" />
+                    <span>Archived Posts</span>
+                    <span class="mp-tab-count">{{ $archivedPets->count() }}</span>
+                </button>
+            </div>
         </div>
 
         {{-- TAB 1: My Listed Pets (Active Posts + Incoming Adoption Requests) --}}
@@ -206,11 +217,11 @@
                                         </div>
                                         <span class="status-pill {{ $stClass }}" style="flex-shrink: 0; align-self: flex-start;">{{ $pet->status }}</span>
                                     </div>
-                                    <div class="mobile-card-actions" style="display: flex; gap: 0.4rem; padding-top: 0.5rem; border-top: 1px solid #F3E8D8;">
+                                    <div class="mobile-card-actions" style="display: flex; flex-direction: row; align-items: center; gap: 0.35rem; padding-top: 0.45rem; border-top: 1px solid #F3E8D8; width: 100%;">
                                         <button 
                                             type="button" 
                                             class="btn-table-edit"
-                                            style="flex: 1; justify-content: center; height: 36px; min-width: 0;"
+                                            style="flex: 1; justify-content: center; height: 32px; min-width: 0; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.45rem; border-radius: 0.5rem;"
                                             onclick="openEditPostModal({{ json_encode($pet) }})"
                                         >
                                             <x-lucide-pencil style="width: 13px; height: 13px; stroke-width: 2; margin-right: 0.25rem;" />
@@ -220,7 +231,7 @@
                                         <button
                                             type="button"
                                             class="{{ $isAdopted ? 'btn-table-revert' : 'btn-table-adopt' }}"
-                                            style="flex: 1; justify-content: center; height: 36px; min-width: 0;"
+                                            style="flex: 1; justify-content: center; height: 32px; min-width: 0; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.45rem; border-radius: 0.5rem;"
                                             onclick="confirmToggleAdopted({{ $pet->id }}, '{{ addslashes($pet->name) }}', {{ $isAdopted ? 'true' : 'false' }})"
                                         >
                                             @if($isAdopted)
@@ -235,11 +246,12 @@
                                         <button
                                             type="button"
                                             class="btn-archive-icon-only"
+                                            style="flex: 0 0 32px; width: 32px; height: 32px; min-width: 32px; max-width: 32px; border-radius: 0.5rem;"
                                             onclick="confirmArchivePost({{ $pet->id }}, '{{ addslashes($pet->name) }}')"
                                             title="Archive Post"
                                             aria-label="Archive Post"
                                         >
-                                            <x-lucide-trash-2 style="width: 15px; height: 15px; stroke-width: 2;" />
+                                            <x-lucide-trash-2 style="width: 14px; height: 14px; stroke-width: 2;" />
                                         </button>
                                     </div>
                                 </div>
@@ -364,37 +376,33 @@
                                         <span class="mobile-req-date">{{ $req->created_at->format('M d, Y') }}</span>
                                         <span class="status-pill {{ $reqBadge }}">{{ $req->status }}</span>
                                     </div>
-                                    <div class="mobile-req-actions" style="display: flex; flex-direction: column; gap: 0.45rem;">
+                                    <div class="mobile-req-actions">
                                         @if($req->status === 'Pending')
-                                            <div style="display: flex; gap: 0.45rem;">
-                                                <form method="POST" action="{{ route('requests.status', $req->id) }}" class="inline-form" style="flex: 1; margin: 0;">
-                                                    @csrf
-                                                    @method('PATCH')
-                                                    <input type="hidden" name="status" value="Accepted">
-                                                    <button type="submit" class="btn-table-accept" style="width: 100%; justify-content: center; height: 38px; background: #3D2314; color: #ffffff; border: none; border-radius: 0.55rem; font-size: 0.88rem; font-weight: 700; display: inline-flex; align-items: center; cursor: pointer; font-family: inherit; gap: 0.35rem;">
-                                                        <x-lucide-check style="width: 14px; height: 14px; stroke-width: 2.5;" />
-                                                        <span>Accept</span>
-                                                    </button>
-                                                </form>
-                                                <button 
-                                                    type="button" 
-                                                    class="btn-table-decline" 
-                                                    style="flex: 1; justify-content: center; height: 38px; background: #ffffff; color: #4A2E2B; border: 1.5px solid #D5C2B1; border-radius: 0.55rem; font-size: 0.88rem; font-weight: 600; display: inline-flex; align-items: center; cursor: pointer; font-family: inherit; gap: 0.35rem;"
-                                                    onclick="confirmDeclineRequest({{ $req->id }}, '{{ addslashes($req->applicant_name) }}', '{{ addslashes($req->pet->name ?? 'Pet') }}')"
-                                                    title="Decline Adoption Request"
-                                                >
-                                                    <x-lucide-x style="width: 14px; height: 14px; stroke-width: 2.5;" />
-                                                    <span>Decline</span>
+                                            <form method="POST" action="{{ route('requests.status', $req->id) }}" class="inline-form mobile-req-accept-form">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="status" value="Accepted">
+                                                <button type="submit" class="btn-table-accept">
+                                                    <x-lucide-check style="width: 13px; height: 13px; stroke-width: 2.4;" />
+                                                    <span>Accept</span>
                                                 </button>
-                                            </div>
+                                            </form>
+                                            <button 
+                                                type="button" 
+                                                class="btn-table-decline"
+                                                onclick="confirmDeclineRequest({{ $req->id }}, '{{ addslashes($req->applicant_name) }}', '{{ addslashes($req->pet->name ?? 'Pet') }}')"
+                                                title="Decline Adoption Request"
+                                            >
+                                                <x-lucide-x style="width: 13px; height: 13px; stroke-width: 2.4;" />
+                                                <span>Decline</span>
+                                            </button>
                                         @endif
                                         <button 
                                             type="button" 
-                                            class="btn-table-message" 
-                                            style="width: 100%; justify-content: center; height: 38px; background: #FDE047; color: #2D1810; border: none; border-radius: 0.55rem; font-size: 0.88rem; font-weight: 700; display: inline-flex; align-items: center; cursor: pointer; font-family: inherit; gap: 0.4rem;"
+                                            class="btn-table-message"
                                             onclick="window.location.href = '{{ route('messages') }}?recipient={{ urlencode($req->applicant_name) }}&recipient_id={{ $req->user_id }}&pet={{ urlencode($req->pet->name ?? 'Pet') }}&pet_id={{ $req->pet_id }}'"
                                         >
-                                            <x-lucide-message-square style="width: 14px; height: 14px; stroke-width: 2.2;" />
+                                            <x-lucide-message-square style="width: 13px; height: 13px; stroke-width: 2.2;" />
                                             <span>Message</span>
                                         </button>
                                     </div>
@@ -535,15 +543,15 @@
                                         <span>Submitted: {{ $app->created_at->format('M d, Y') }}</span>
                                         <span>{{ $app->barangay }}</span>
                                     </div>
-                                    <div class="mobile-card-actions" style="display: flex; gap: 0.4rem; padding-top: 0.5rem; border-top: 1px solid #F3E8D8;">
+                                    <div class="mobile-card-actions" style="display: flex; flex-direction: row; align-items: center; gap: 0.35rem; padding-top: 0.45rem; border-top: 1px solid #F3E8D8; width: 100%;">
                                         @if($app->pet && $app->pet->user_id)
                                             <button 
                                                 type="button" 
                                                 class="btn-table-message"
-                                                style="flex: 1; justify-content: center; height: 36px;"
+                                                style="flex: 1; min-width: 0; justify-content: center; height: 32px; background: #FDE047; color: #2D1810; border: none; border-radius: 0.5rem; font-size: 0.78rem; font-weight: 700; display: inline-flex; align-items: center; cursor: pointer; font-family: inherit; gap: 0.25rem; padding: 0.25rem 0.45rem;"
                                                 onclick="window.location.href = '{{ route('messages') }}?recipient={{ urlencode($app->pet->posted_by ?? 'Rescuer') }}&recipient_id={{ $app->pet->user_id }}&pet={{ urlencode($app->pet->name ?? 'Pet') }}&pet_id={{ $app->pet_id }}'"
                                             >
-                                                <x-lucide-message-square style="width: 13px; height: 13px; stroke-width: 2.2; margin-right: 0.2rem;" />
+                                                <x-lucide-message-square style="width: 13px; height: 13px; stroke-width: 2.2;" />
                                                 <span>Message</span>
                                             </button>
                                         @endif
@@ -551,22 +559,22 @@
                                             <button 
                                                 type="button" 
                                                 class="btn-table-decline"
-                                                style="flex: 1; justify-content: center; height: 36px;"
+                                                style="flex: 1; min-width: 0; justify-content: center; height: 32px; background: #ffffff; color: #4A2E2B; border: 1.5px solid #D5C2B1; border-radius: 0.5rem; font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; cursor: pointer; font-family: inherit; gap: 0.25rem; padding: 0.25rem 0.45rem;"
                                                 onclick="confirmCancelRequest({{ $app->id }}, '{{ addslashes($app->pet->name ?? 'this pet') }}')"
                                                 title="Cancel Adoption Request"
                                             >
-                                                <x-lucide-x style="width: 13px; height: 13px; stroke-width: 2.2; margin-right: 0.2rem;" />
+                                                <x-lucide-x style="width: 13px; height: 13px; stroke-width: 2.2;" />
                                                 <span>Cancel</span>
                                             </button>
                                         @elseif(in_array($app->status, ['Declined', 'Cancelled']))
                                             <button 
                                                 type="button" 
                                                 class="btn-table-delete"
-                                                style="flex: 1; justify-content: center; height: 36px;"
+                                                style="flex: 1; min-width: 0; justify-content: center; height: 32px; background: #FEE2E2; color: #DC2626; border: 1px solid #FECACA; border-radius: 0.5rem; font-size: 0.78rem; font-weight: 600; display: inline-flex; align-items: center; cursor: pointer; font-family: inherit; gap: 0.25rem; padding: 0.25rem 0.45rem;"
                                                 onclick="confirmDeleteApplication({{ $app->id }}, '{{ addslashes($app->pet->name ?? 'this pet') }}')"
                                                 title="Delete Application Record"
                                             >
-                                                <x-lucide-trash-2 style="width: 13px; height: 13px; stroke-width: 2; margin-right: 0.25rem;" />
+                                                <x-lucide-trash-2 style="width: 13px; height: 13px; stroke-width: 2;" />
                                                 <span>Delete</span>
                                             </button>
                                         @endif
@@ -686,11 +694,11 @@
                                         </div>
                                         <span class="badge-archived" style="flex-shrink: 0; align-self: flex-start; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: #F3F4F6; color: #4B5563;">Archived</span>
                                     </div>
-                                    <div class="mobile-card-actions" style="display: flex; gap: 0.4rem; padding-top: 0.5rem; border-top: 1px solid #F3E8D8;">
+                                    <div class="mobile-card-actions" style="display: flex; flex-direction: row; align-items: center; gap: 0.35rem; padding-top: 0.45rem; border-top: 1px solid #F3E8D8; width: 100%;">
                                         <form method="POST" action="{{ route('posts.restore', $pet->id) }}" class="inline-form" style="flex: 1; display: contents;">
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit" class="btn-table-restore" style="flex: 1; justify-content: center; height: 36px;" title="Restore Post">
+                                            <button type="submit" class="btn-table-restore" style="flex: 1; min-width: 0; justify-content: center; height: 32px; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.45rem; border-radius: 0.5rem;" title="Restore Post">
                                                 <x-lucide-rotate-ccw style="width: 13px; height: 13px; stroke-width: 2.2; margin-right: 0.25rem;" />
                                                 <span>Restore</span>
                                             </button>
@@ -698,7 +706,7 @@
                                         <button
                                             type="button"
                                             class="btn-table-delete"
-                                            style="flex: 1; justify-content: center; height: 36px;"
+                                            style="flex: 1; min-width: 0; justify-content: center; height: 32px; font-size: 0.78rem; font-weight: 700; padding: 0.25rem 0.45rem; border-radius: 0.5rem;"
                                             onclick="confirmPermanentDelete({{ $pet->id }}, '{{ addslashes($pet->name) }}')"
                                             title="Delete Permanently"
                                         >
