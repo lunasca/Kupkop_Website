@@ -941,11 +941,11 @@
         const isOwn = pet.is_own_post || (currentUserId !== null && pet.user_id === currentUserId);
 
         if (isOwn) {
-            if (actionsArea) actionsArea.style.display = 'none';
-            if (ownPostNotice) ownPostNotice.style.display = 'block';
+            if (actionsArea) actionsArea.style.setProperty('display', 'none', 'important');
+            if (ownPostNotice) ownPostNotice.style.setProperty('display', 'flex', 'important');
         } else {
-            if (actionsArea) actionsArea.style.display = 'block';
-            if (ownPostNotice) ownPostNotice.style.display = 'none';
+            if (actionsArea) actionsArea.style.removeProperty('display');
+            if (ownPostNotice) ownPostNotice.style.setProperty('display', 'none', 'important');
 
             // Disable the "Request Adoption" button if user already has a pending request
             const adoptBtn = actionsArea ? actionsArea.querySelector('.btn-request-adopt') : null;

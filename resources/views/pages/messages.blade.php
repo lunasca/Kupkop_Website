@@ -579,20 +579,23 @@ async function selectConversation(id) {
     const panel = document.getElementById('msgChatPanel');
     if (panel) panel.style.display = 'flex';
 
-    // On mobile: hide sidebar, show chat
+    // Render chat content before starting slide transition
+    renderChat(conv);
+
+    // On mobile: smoothly slide in chat area, push back sidebar
     const sidebar = document.getElementById('msgSidebar');
     if (sidebar) sidebar.classList.add('mobile-hidden');
 
     const chatArea = document.getElementById('msgChatArea');
     if (chatArea) chatArea.classList.add('mobile-active');
 
-    renderChat(conv);
-
     const searchInput = document.getElementById('convSearch');
     renderSidebar(searchInput ? searchInput.value : '');
 
+    // Avoid popping keyboard automatically on mobile tap
+    const isMobile = window.innerWidth <= 768;
     const input = document.getElementById('msgInput');
-    if (input) input.focus();
+    if (input && !isMobile) input.focus();
 }
 
 function deselectConversation() {
@@ -604,11 +607,25 @@ function deselectConversation() {
     const chatArea = document.getElementById('msgChatArea');
     if (chatArea) chatArea.classList.remove('mobile-active');
 
-    const emptyState = document.getElementById('msgEmptyState');
-    if (emptyState) emptyState.style.display = 'flex';
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        // Allow the chat view to smoothly slide out to the right before hiding the DOM panel
+        setTimeout(() => {
+            if (activeId === null) {
+                const emptyState = document.getElementById('msgEmptyState');
+                if (emptyState) emptyState.style.display = 'none';
 
-    const panel = document.getElementById('msgChatPanel');
-    if (panel) panel.style.display = 'none';
+                const panel = document.getElementById('msgChatPanel');
+                if (panel) panel.style.display = 'none';
+            }
+        }, 330);
+    } else {
+        const emptyState = document.getElementById('msgEmptyState');
+        if (emptyState) emptyState.style.display = 'flex';
+
+        const panel = document.getElementById('msgChatPanel');
+        if (panel) panel.style.display = 'none';
+    }
 
     renderSidebar();
 }
@@ -1171,7 +1188,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (petContext) {
                 input.value = `Hi ${activeConv.name}, I saw ${petContext} on Kupkop and would love to ask a few questions about adopting!`;
                 autoResizeTextarea(input);
-                input.focus();
+                if (!isMobile) input.focus();
             }
         }
     }

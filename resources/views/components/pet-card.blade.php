@@ -84,7 +84,7 @@
         </div>
 
         <div class="pet-meta-row">
-            <p class="pet-location">
+            <p class="pet-location" title="{{ !empty($pet->location) ? $pet->location : 'Brgy. 176-F' }}">
                 <x-lucide-map-pin class="location-pin-icon" />
                 <span class="location-text">{{ !empty($pet->location) ? $pet->location : 'Brgy. 176-F' }}</span>
             </p>
@@ -92,7 +92,7 @@
                 $posterName = $pet->posted_by ?? $pet->user?->name;
             @endphp
             @if(!empty($posterName))
-                <p class="pet-poster-tag">
+                <p class="pet-poster-tag" title="Posted by {{ $posterName }}">
                     <span class="poster-label">By</span>
                     <span class="poster-name">{{ $posterName }}</span>
                 </p>
