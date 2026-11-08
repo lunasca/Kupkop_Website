@@ -4239,6 +4239,16 @@ body.modal-open {
     padding-right: 2.75rem !important;
 }
 
+.password-input-wrapper input::-ms-reveal,
+.password-input-wrapper input::-ms-clear,
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    pointer-events: none !important;
+}
+
 .password-toggle-btn {
     position: absolute;
     right: 0.75rem;
@@ -12852,22 +12862,37 @@ body.page-admin-accounts .admin-pagination-wrapper {
     #register-modal .password-input-wrapper {
         position: relative !important;
         width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
     }
 
     #login-modal .password-input-wrapper input,
     #register-modal .password-input-wrapper input {
         padding-right: 2.5rem !important;
+        width: 100% !important;
+    }
+
+    #login-modal input[type="password"]::-ms-reveal,
+    #login-modal input[type="password"]::-ms-clear,
+    #register-modal input[type="password"]::-ms-reveal,
+    #register-modal input[type="password"]::-ms-clear {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+        pointer-events: none !important;
     }
 
     #login-modal .password-toggle-btn,
     #register-modal .password-toggle-btn {
         position: absolute !important;
-        right: 0 !important;
-        top: 0 !important;
-        bottom: 0 !important;
-        width: 38px !important;
-        height: 38px !important;
-        min-height: 38px !important;
+        right: 0.35rem !important;
+        top: 50% !important;
+        bottom: auto !important;
+        transform: translateY(-50%) !important;
+        width: 32px !important;
+        height: 32px !important;
+        min-width: 32px !important;
+        min-height: 32px !important;
         padding: 0 !important;
         margin: 0 !important;
         background: transparent !important;
@@ -12877,13 +12902,23 @@ body.page-admin-accounts .admin-pagination-wrapper {
         justify-content: center !important;
         color: #8C756B !important;
         cursor: pointer !important;
+        z-index: 5 !important;
     }
 
     #login-modal .password-toggle-btn svg,
     #register-modal .password-toggle-btn svg {
-        width: 17px !important;
-        height: 17px !important;
+        width: 16px !important;
+        height: 16px !important;
         stroke-width: 2 !important;
+    }
+
+    #login-modal .password-toggle-btn svg[style*="display: none"],
+    #register-modal .password-toggle-btn svg[style*="display: none"],
+    #login-modal .password-toggle-btn .icon-eye-off[style*="display: none"],
+    #register-modal .password-toggle-btn .icon-eye-off[style*="display: none"],
+    #login-modal .password-toggle-btn .icon-eye[style*="display: none"],
+    #register-modal .password-toggle-btn .icon-eye[style*="display: none"] {
+        display: none !important;
     }
 
     #login-modal .form-group-checkbox,
