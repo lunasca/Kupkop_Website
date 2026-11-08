@@ -371,10 +371,10 @@
                                             <div class="mobile-req-name">{{ $req->applicant_name }}</div>
                                             <div class="mobile-req-pet">wants to adopt <strong>{{ $req->pet->name ?? 'Pet' }}</strong></div>
                                         </div>
+                                        <span class="status-pill {{ $reqBadge }}">{{ $req->status }}</span>
                                     </div>
                                     <div class="mobile-req-meta">
                                         <span class="mobile-req-date">{{ $req->created_at->format('M d, Y') }}</span>
-                                        <span class="status-pill {{ $reqBadge }}">{{ $req->status }}</span>
                                     </div>
                                     <div class="mobile-req-actions">
                                         @if($req->status === 'Pending')
